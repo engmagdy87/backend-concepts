@@ -1,0 +1,98 @@
+[
+  {
+    "title": "Midnight Ember Ceramic Mug",
+    "price": 18.49,
+    "description": "Hand-thrown stoneware mug with a matte charcoal glaze and a warm copper rim. Holds 12 oz, dishwasher-safe, and built for slow mornings.",
+    "imageUrl": "https://picsum.photos/seed/midnight-ember-mug/600/600",
+    "isPublished": false,
+    "id": 1
+  },
+  {
+    "title": "Alpine Breeze Bamboo Cutting Board",
+    "price": 34.95,
+    "description": "Sustainably sourced bamboo cutting board with juice grooves and a non-slip base. Measures 16x10 inches — perfect for meal prep and serving.",
+    "imageUrl": "https://picsum.photos/seed/alpine-breeze-board/600/600",
+    "isPublished": true,
+    "id": 2
+  },
+  {
+    "title": "Harbor Glow Desk Lamp",
+    "price": 42.0,
+    "description": "Minimal brass desk lamp with a warm dimmable LED and a weighted marble base. Ideal for late-night reading or focused work.",
+    "imageUrl": "https://picsum.photos/seed/harbor-glow-lamp/600/600",
+    "isPublished": true,
+    "id": 3
+  },
+  {
+    "title": "Cedar Trail Wool Throw",
+    "price": 68.5,
+    "description": "Soft merino wool throw in forest-green herringbone. Lightweight enough for summer evenings, warm enough for winter nights.",
+    "imageUrl": "https://picsum.photos/seed/cedar-trail-throw/600/600",
+    "isPublished": true,
+    "id": 4
+  },
+  {
+    "title": "Linen Drift Apron",
+    "price": 29.99,
+    "description": "Stone-washed linen apron with adjustable straps and a deep front pocket. Made to look better with every kitchen spill.",
+    "imageUrl": "https://picsum.photos/seed/linen-drift-apron/600/600",
+    "isPublished": false,
+    "id": 5
+  },
+  {
+    "title": "Pebble Rest Incense Holder",
+    "price": 14.25,
+    "description": "Sculpted ceramic incense holder shaped like a river stone. Catches ash cleanly and sits quietly on any shelf.",
+    "imageUrl": "https://picsum.photos/seed/pebble-rest-incense/600/600",
+    "isPublished": true,
+    "id": 6
+  },
+  {
+    "title": "Northstar Enamel Kettle",
+    "price": 39.0,
+    "description": "Classic stovetop kettle with a matte navy enamel finish and a loud, cheerful whistle. Holds 1.7 liters.",
+    "imageUrl": "https://picsum.photos/seed/northstar-kettle/600/600",
+    "isPublished": true,
+    "id": 7
+  },
+  {
+    "title": "Sunwell Glass Carafe",
+    "price": 24.75,
+    "description": "Borosilicate glass carafe with a cork stopper. Keeps water, juice, or cold brew looking as good as it tastes.",
+    "imageUrl": "https://picsum.photos/seed/sunwell-carafe/600/600",
+    "isPublished": true,
+    "id": 8
+  },
+  {
+    "title": "Forge & Grain Chef Knife",
+    "price": 89.0,
+    "description": "8-inch high-carbon steel chef knife with a walnut handle. Balanced, sharp, and built for daily prep.",
+    "imageUrl": "https://picsum.photos/seed/forge-grain-knife/600/600",
+    "isPublished": false,
+    "id": 9
+  },
+  {
+    "title": "Moonlit Cotton Pillow Set",
+    "price": 54.0,
+    "description": "Set of two organic cotton pillows with a faint indigo stripe. Breathable, machine-washable, and hotel-level plush.",
+    "imageUrl": "https://picsum.photos/seed/moonlit-pillow-set/600/600",
+    "isPublished": true,
+    "id": 10
+  },
+  {
+    "title": "Copper Vein Plant Mister",
+    "price": 16.8,
+    "description": "Fine-mist copper sprayer for houseplants. Adds a little ritual to watering day.",
+    "imageUrl": "https://picsum.photos/seed/copper-vein-mister/600/600",
+    "isPublished": true,
+    "id": 11
+  },
+  {
+    "title": "Quiet Hour Notebook",
+    "price": 12.5,
+    "description": "A5 dotted notebook with thick cream paper and a cloth-bound cover. Lies flat so ideas do not have to wait.",
+    "imageUrl": "https://picsum.photos/seed/quiet-hour-notebook/600/600",
+    "isPublished": true,
+    "id": 12
+  }
+]
