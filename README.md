@@ -63,3 +63,17 @@ routes/shop.ts         # Shop product routes
 controllers/           # Product model + request handlers
 data/products.json     # File-backed product store
 ```
+
+```mermaid
+flowchart LR
+  Client["HTTP client"] --> App["app.ts\nExpress :3040"]
+  App --> Admin["routes/admin.ts"]
+  App --> Shop["routes/shop.ts"]
+  App --> NotFound["404 JSON"]
+  Admin --> Ctrl["products.controller.ts"]
+  Shop --> Ctrl
+  Ctrl --> Memory["products[]\nin memory"]
+  Ctrl --> File["data/products.json"]
+```
+
+A request hits `app.ts`, which parses the body and mounts `/admin` or `/shop`. Both routers call the same controller. The `Product` class keeps the catalog in memory (loaded from JSON on startup) and writes the file on create. Shop handlers filter with `isPublished`; admin handlers return the full catalog.
