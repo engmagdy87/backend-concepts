@@ -1,0 +1,35 @@
+---
+description: Update CHANGELOG.md and LEARNING.md when a feature is finished, not on every commit
+alwaysApply: true
+---
+
+# Progress logs
+
+Git tracks the working tree. These files are the human-readable history.
+
+- `CHANGELOG.md` — shipped product/API changes (Keep a Changelog)
+- `LEARNING.md` — backend concepts practiced (newest first)
+
+## When to update
+
+When a **feature or bugfix is finished**, in the **same commit** as the code:
+
+1. Add bullets under `CHANGELOG.md` → `[Unreleased]` using Added / Changed / Fixed / Removed.
+2. Add a short `LEARNING.md` entry only if a backend concept was practiced. Skip chores.
+
+Skip both files for WIP, formatting-only, or "just commit this" unless the user asks.
+
+## Examples
+
+```markdown
+## [Unreleased]
+
+### Added
+- `PUT /admin/product/:id` to update an existing product
+```
+
+```markdown
+## 2026-08-25 — Update vs create
+
+- Distinguished create (`POST`) from update (`PUT`) and reused the same JSON file write path.
+```
