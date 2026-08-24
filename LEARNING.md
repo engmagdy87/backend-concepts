@@ -13,7 +13,7 @@ Update this file when a feature teaches a concept worth keeping. Skip chores, fo
 ## 2026-08-24 — Update and delete
 
 - Distinguished create (`save`) from update/delete: mutate the in-memory array by index, then write the JSON file.
-- Kept verb-style admin routes (`POST /edit-product`, `POST /delete-product`) with `id` in the body; REST would use `PUT`/`PATCH`/`DELETE` on `/products/:id`.
+- Kept verb-style admin routes (`POST /update-product`, `POST /delete-product`) with `id` in the body; REST would use `PUT`/`PATCH`/`DELETE` on `/products/:id`.
 - Switched new ids to `max(id) + 1` so deleting a product cannot make the next create reuse an existing id.
 
 ## 2026-08-24 — Layered product modules

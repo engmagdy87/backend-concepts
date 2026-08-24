@@ -8,6 +8,17 @@ Canonical copy also lives at `~/.cursor/skills/backend-learning-reference/BACKEN
 
 ## Inbox
 
+### 2026-08-24 — What a service orchestrates
+
+- Example: delete product (Product model) + clear cart lines (Cart model) + notify (email/SMS external API).
+- Service calls those pieces in one use case; it is not the database and not HTTP.
+- Each model still owns its own data; notify is usually a client/adapter, not a “Notify model.”
+
+### 2026-08-24 — Update/delete: model vs service
+
+- Single-entity update/delete (find by id, mutate list, write file) stays on the **model**.
+- Add a **service** only when the use case orchestrates several steps/models (e.g. delete product + clear cart lines + notify).
+
 ### 2026-08-24 — Product id rules
 
 - Positive integer ids; next = `max(id) + 1`.
@@ -17,13 +28,13 @@ Canonical copy also lives at `~/.cursor/skills/backend-learning-reference/BACKEN
 ### 2026-08-24 — Update and delete
 
 - `Product.update` / `Product.delete` mutate the in-memory list by index, then write the file — never reuse `save()` for edits.
-- Verb routes: `POST /admin/edit-product` and `POST /admin/delete-product` with `id` in the body; REST alternative remains `PUT|PATCH|DELETE /products/:id`.
+- Verb routes: `POST /admin/update-product` and `POST /admin/delete-product` with `id` in the body; REST alternative remains `PUT|PATCH|DELETE /products/:id`.
 - With deletes enabled, new ids must be `max(id) + 1`, not `length + 1`.
 
 ### 2026-08-24 — PUT vs PATCH
 
 - PUT = replace the whole resource; PATCH = change only some fields.
-- This app currently uses verb POSTs (`/edit-product`, `/delete-product`); REST would be `PUT|PATCH /products/:id` and `DELETE /products/:id`.
+- This app currently uses verb POSTs (`/update-product`, `/delete-product`); REST would be `PUT|PATCH /products/:id` and `DELETE /products/:id`.
 
 ### 2026-08-24 — writeFile vs writeFileSync
 
@@ -70,6 +81,22 @@ Ask: *is this a question about the product, or a whole workflow?*
 **Do not** put `isPublished` filtering in utils. That is product meaning.
 
 **Service** is optional until one request needs several steps or several models. Do not add a service folder “because real apps have services.”
+
+**Update / delete:** if the work is “find this product, change or remove it, save” → **model** (`Product.update` / `Product.delete`). Put it in a **service** only when the flow is bigger than one entity (e.g. delete product → also remove it from carts → send an email).
+
+Example of a real service (not needed in this repo yet):
+
+```
+Controller
+  → ProductService.removeProduct(id)     // use case / orchestration
+       → Product.delete(id)              // Product model (this entity's data)
+       → Cart.removeLinesForProduct(id)  // Cart model (another entity's data)
+       → emailClient.send(...)           // external system (API/SDK), not a model
+```
+
+- **Models** = your app’s entities and their persistence (`Product`, `Cart`, later `Order`).
+- **External service** = something outside your process (SendGrid, Twilio, Stripe). You usually wrap it in a small **client/adapter**, not a “Notify model.”
+- **App service** = the glue that runs those steps in the right order and handles “what if step 2 fails?”
 
 ### One source of truth
 
@@ -168,7 +195,7 @@ PATCH /admin/products/1
 
 **Idempotency (useful idea):** repeating the same PUT with the same body should leave the same final state. PATCH is often idempotent too when you set fields to absolute values (`"price": 12`), but “increment by 1” style patches are not.
 
-**Your app today:** `POST /admin/edit-product` is fine for learning (action in the path). REST style would be `PUT` or `PATCH` on `/admin/products/:id` and put the id in the URL, not only in the body.
+**Your app today:** `POST /admin/update-product` is fine for learning (action in the path). REST style would be `PUT` or `PATCH` on `/admin/products/:id` and put the id in the URL, not only in the body.
 
 ### Types vs runtime validation
 
@@ -237,7 +264,7 @@ await fs.promises.writeFile(productsFilePath, JSON.stringify(products));
 
 Ideas not implemented, or “next when ready”:
 
-- [ ] Prefer REST verbs when ready: `PUT|PATCH /products/:id`, `DELETE /products/:id` (instead of `POST /edit-product` / `POST /delete-product`)
+- [ ] Prefer REST verbs when ready: `PUT|PATCH /products/:id`, `DELETE /products/:id` (instead of `POST /update-product` / `POST /delete-product`)
 - [ ] Shared 404/400 response helpers (optional; DRY JSON shape)
 - [ ] Async file I/O (`fs.promises`)
 - [ ] Service layer only when a use case spans multiple models/steps
@@ -273,5 +300,5 @@ data/products.json
 ```
 
 Shop: `Product.fetchPublished` / `fetchPublishedById`  
-Admin: `addProduct`, `editProduct`, `deleteProduct`, `fetchProducts`, `fetchProductById`  
+Admin: `addProduct`, `updateProduct`, `deleteProduct`, `fetchProducts`, `fetchProductById`  
 Model: `save`, `update`, `delete`, plus fetch helpers

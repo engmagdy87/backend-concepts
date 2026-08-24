@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import Product from "../models/product.model";
 import type {
   DeleteProductBody,
-  EditProductBody,
+  UpdateProductBody,
   ProductInput,
 } from "../types/product.types";
 
@@ -18,8 +18,8 @@ export const addProduct = (
   });
 };
 
-export const editProduct = (
-  req: Request<unknown, unknown, EditProductBody>,
+export const updateProduct = (
+  req: Request<unknown, unknown, UpdateProductBody>,
   res: Response,
 ) => {
   const { id, ...productData } = req.body;
