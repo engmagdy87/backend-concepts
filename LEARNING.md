@@ -4,6 +4,18 @@ Notes on backend concepts practiced in this repo. Newest entries first.
 
 Update this file when a feature teaches a concept worth keeping. Skip chores, formatting-only changes, and WIP commits.
 
+## 2026-08-25 — PATCH is partial, id in the URL
+
+- Replaced `POST /admin/update-product` (id in the body) with `PATCH /admin/products/:id`.
+- Body is only the fields to change. Empty body is `400`. SQL `SET` lists only those columns (names stay hardcoded, not taken from the client).
+- After `UPDATE`, `SELECT` the row. `affectedRows === 0` is not “not found” — MySQL also reports 0 when the row exists but nothing changed.
+
+## 2026-08-25 — Create returns insertId
+
+- `save()` `INSERT`s with `?` and returns a `ProductRecord` whose `id` is `ResultSetHeader.insertId`.
+- The controller sends that row in `201` `data`. DB errors still throw to the app `500` handler.
+- mysql2 returns `isPublished` as `0`/`1`; the model maps it with `Boolean(...)` so JSON is `true`/`false`.
+
 ## 2026-08-24 — Cart add/remove are +1 / −1
 
 - Quantity lives on the **cart line** (stored state), not on the add request.

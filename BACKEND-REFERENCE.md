@@ -8,6 +8,19 @@ Canonical copy also lives at `~/.cursor/skills/backend-learning-reference/BACKEN
 
 ## Inbox
 
+### 2026-08-25 — PATCH: partial SET, id in the URL
+
+- Update is `PATCH /admin/products/:id`. Body is `Partial<ProductInput>`; empty body is 400.
+- Model builds `SET` only for keys that are present. Column names stay hardcoded (never interpolate client keys into SQL).
+- After UPDATE, `SELECT` the row. Do not use `affectedRows === 0` for 404 — MySQL reports 0 when the row exists but values did not change.
+- Map `isPublished` with `Boolean(...)` on that SELECT. Delete is still `POST /admin/delete-product` with `id` in the body.
+
+### 2026-08-25 — Create returns the row, not void
+
+- `save` awaits `INSERT` and returns `ProductRecord` (`insertId` + fields). Do not return `{ error }` from the model.
+- Controller `await`s and puts that row in `201` `data`. Thrown queries still hit the app `500` middleware.
+- MySQL `BOOLEAN`/`TINYINT(1)` is `0`/`1` on the wire. Map in the **model** (`Boolean(row.isPublished)`) so the API JSON is a real boolean.
+
 ### 2026-08-24 — DB credentials in `.env`
 
 - Host / user / password / database name live in `.env`, never in source.
@@ -231,7 +244,7 @@ PATCH /admin/products/1
 
 **Idempotency (useful idea):** repeating the same PUT with the same body should leave the same final state. PATCH is often idempotent too when you set fields to absolute values (`"price": 12`), but “increment by 1” style patches are not.
 
-**Your app today:** `POST /admin/update-product` is fine for learning (action in the path). REST style would be `PUT` or `PATCH` on `/admin/products/:id` and put the id in the URL, not only in the body.
+**Your app today:** update is `PATCH /admin/products/:id` (partial body, id in the URL). Delete is still a verb POST (`POST /admin/delete-product` with `id` in the body).
 
 ### Types vs runtime validation
 
@@ -301,7 +314,8 @@ await fs.promises.writeFile(productsFilePath, JSON.stringify(products));
 
 Ideas not implemented, or “next when ready”:
 
-- [ ] Prefer REST verbs when ready: `PUT|PATCH /products/:id`, `DELETE /products/:id` (instead of `POST /update-product` / `POST /delete-product`)
+- [x] `PATCH /admin/products/:id` (partial body; id in the URL)
+- [ ] `DELETE /admin/products/:id` (still `POST /admin/delete-product`)
 - [ ] Shared 404/400 response helpers (optional; DRY JSON shape)
 - [ ] Async file I/O (`fs.promises`)
 - [ ] Service layer only when a use case spans multiple models/steps

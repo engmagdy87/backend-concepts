@@ -2,28 +2,27 @@ import { Request, Response } from "express";
 import Product from "../models/product.model";
 import type {
   DeleteProductBody,
-  UpdateProductBody,
   ProductInput,
 } from "../types/product.types";
 
-export const addProduct = (
+export const addProduct = async (
   req: Request<unknown, unknown, ProductInput>,
   res: Response,
 ) => {
   const product = new Product(req.body);
-  const savedProduct = product.save();
+  const savedProduct = await product.save();
+
   res.status(201).json({
     message: "Product added successfully",
     data: savedProduct,
   });
 };
 
-export const updateProduct = (
-  req: Request<unknown, unknown, UpdateProductBody>,
+export const updateProduct = async (
+  req: Request<{ id: string }, unknown, Partial<ProductInput>>,
   res: Response,
 ) => {
-  const { id, ...productData } = req.body;
-  const parsedId = Product.parseId(id);
+  const parsedId = Product.parseId(req.params.id);
 
   if (parsedId === null) {
     return res.status(400).json({
@@ -31,7 +30,21 @@ export const updateProduct = (
     });
   }
 
-  const updatedProduct = Product.update(parsedId, productData);
+  const productData = req.body;
+  const hasPatch =
+    productData.title !== undefined ||
+    productData.price !== undefined ||
+    productData.description !== undefined ||
+    productData.imageUrl !== undefined ||
+    productData.isPublished !== undefined;
+
+  if (!hasPatch) {
+    return res.status(400).json({
+      message: "body must include at least one field to update",
+    });
+  }
+
+  const updatedProduct = await Product.update(parsedId, productData);
   if (!updatedProduct) {
     return res.status(404).json({ message: "Product not found" });
   }
@@ -62,8 +75,8 @@ export const deleteProduct = (
   res.json({ message: "Product deleted successfully" });
 };
 
-export const fetchProducts = (_req: Request, res: Response) => {
-  const products = Product.fetchProducts();
+export const fetchProducts = async (_req: Request, res: Response) => {
+  const products = await Product.fetchProducts();
   res.json({ data: products });
 };
 

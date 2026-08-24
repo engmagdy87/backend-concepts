@@ -1,6 +1,5 @@
 import "dotenv/config";
-
-import express from "express";
+import express, { NextFunction, Request, Response } from "express";
 import bodyParser from "body-parser";
 
 import adminRoutes from "./routes/admin.route";
@@ -20,6 +19,11 @@ app.use((_req, res) => {
   res.status(404).json({
     message: "API not found",
   });
+});
+
+app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
+  console.error(err);
+  res.status(500).json({ message: "Internal server error" });
 });
 
 app.listen(3040);

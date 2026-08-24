@@ -1,13 +1,11 @@
 import fs from "fs";
+import type { ResultSetHeader } from "mysql2";
+import db from "../utils/database.utils";
 import type { ProductInput, ProductRecord } from "../types/product.types";
 import { isPositiveInteger } from "../utils/number.utils";
 import { getProductsFromFile, productsFilePath } from "../utils/product.utils";
 
 const products: ProductRecord[] = getProductsFromFile();
-
-function nextProductId(): number {
-  return products.reduce((maxId, product) => Math.max(maxId, product.id), 0) + 1;
-}
 
 function toProductRecord(id: number, productData: ProductInput): ProductRecord {
   return {
@@ -39,11 +37,19 @@ class Product {
     this.isPublished = productData.isPublished;
   }
 
-  save(): ProductRecord {
-    const newProduct = toProductRecord(nextProductId(), this);
-    products.push(newProduct);
-    writeProductsToFile();
-    return newProduct;
+  async save(): Promise<ProductRecord> {
+    const [result] = await db.execute<ResultSetHeader>(
+      "INSERT INTO products (title, price, description, imageUrl, isPublished) VALUES (?, ?, ?, ?, ?)",
+      [
+        this.title,
+        this.price,
+        this.description,
+        this.imageUrl,
+        this.isPublished,
+      ],
+    );
+
+    return toProductRecord(result.insertId, this);
   }
 
   /** Accepts a number or numeric string (e.g. URL param `"3"`). */
@@ -58,19 +64,53 @@ class Product {
     return null;
   }
 
-  static update(
+  static async update(
     id: number,
-    productData: ProductInput,
-  ): ProductRecord | undefined {
-    const index = products.findIndex((product) => product.id === id);
-    if (index === -1) {
+    productData: Partial<ProductInput>,
+  ): Promise<ProductRecord | undefined> {
+    const setClauses: string[] = [];
+    const values: (string | number | boolean)[] = [];
+
+    if (productData.title !== undefined) {
+      setClauses.push("title = ?");
+      values.push(productData.title);
+    }
+    if (productData.price !== undefined) {
+      setClauses.push("price = ?");
+      values.push(productData.price);
+    }
+    if (productData.description !== undefined) {
+      setClauses.push("description = ?");
+      values.push(productData.description);
+    }
+    if (productData.imageUrl !== undefined) {
+      setClauses.push("imageUrl = ?");
+      values.push(productData.imageUrl);
+    }
+    if (productData.isPublished !== undefined) {
+      setClauses.push("isPublished = ?");
+      values.push(productData.isPublished);
+    }
+
+    if (setClauses.length === 0) {
       return undefined;
     }
 
-    const updatedProduct = toProductRecord(id, productData);
-    products[index] = updatedProduct;
-    writeProductsToFile();
-    return updatedProduct;
+    values.push(id);
+    await db.execute(
+      `UPDATE products SET ${setClauses.join(", ")} WHERE id = ?`,
+      values,
+    );
+
+    const [rows] = await db.execute("SELECT * FROM products WHERE id = ?", [
+      id,
+    ]);
+    const row = (rows as ProductRecord[])[0];
+    if (!row) {
+      return undefined;
+    }
+
+    return { ...row, isPublished: Boolean(row.isPublished) };
   }
 
   static delete(id: number): boolean {
@@ -84,8 +124,12 @@ class Product {
     return true;
   }
 
-  static fetchProducts(): ProductRecord[] {
-    return products;
+  static async fetchProducts(): Promise<ProductRecord[]> {
+    const [rows] = await db.execute("SELECT * FROM products");
+    return (rows as ProductRecord[]).map((row) => ({
+      ...row,
+      isPublished: Boolean(row.isPublished),
+    }));
   }
 
   static fetchProductById(id: unknown): ProductRecord | undefined {

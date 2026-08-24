@@ -14,10 +14,6 @@ export interface ProductRecord extends ProductInput {
 /** Clients may send a number or a numeric string. */
 export type ProductIdInput = number | string;
 
-export interface UpdateProductBody extends ProductInput {
-  id: ProductIdInput;
-}
-
 export interface DeleteProductBody {
   id: ProductIdInput;
 }

@@ -54,7 +54,7 @@
         {
           "name": "Update product",
           "request": {
-            "method": "POST",
+            "method": "PATCH",
             "header": [
               {
                 "key": "Content-Type",
@@ -63,9 +63,9 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"id\": 1,\n  \"title\": \"A book\",\n  \"price\": 24.99,\n  \"description\": \"A useful book\",\n  \"imageUrl\": \"https://example.com/book.png\",\n  \"isPublished\": true\n}"
+              "raw": "{\n  \"price\": 24.99,\n  \"isPublished\": true\n}"
             },
-            "url": "{{baseUrl}}/admin/update-product"
+            "url": "{{baseUrl}}/admin/products/{{productId}}"
           }
         },
         {
