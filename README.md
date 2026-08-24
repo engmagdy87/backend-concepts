@@ -31,8 +31,10 @@ JSON request bodies are accepted. Unknown routes return `404` with `{ "message":
 | Method | Path | Description |
 | --- | --- | --- |
 | `POST` | `/admin/add-product` | Create a product |
+| `POST` | `/admin/edit-product` | Replace an existing product (body includes `id`) |
+| `POST` | `/admin/delete-product` | Delete a product (body includes `id`) |
 | `GET` | `/admin/products` | List all products |
-| `GET` | `/admin/product/:id` | Get a product by id |
+| `GET` | `/admin/products/:id` | Get a product by id |
 
 Create body:
 
@@ -46,6 +48,29 @@ Create body:
 }
 ```
 
+The server assigns a positive integer `id` (`max(existing id) + 1`). Edit/delete accept `id` as a number or numeric string.
+
+Edit body (same fields plus `id`):
+
+```json
+{
+  "id": 1,
+  "title": "A book",
+  "price": 24.99,
+  "description": "A useful book",
+  "imageUrl": "https://example.com/book.png",
+  "isPublished": true
+}
+```
+
+Delete body:
+
+```json
+{
+  "id": 1
+}
+```
+
 ### Shop
 
 Shop routes return only products with `isPublished: true`.
@@ -53,7 +78,7 @@ Shop routes return only products with `isPublished: true`.
 | Method | Path | Description |
 | --- | --- | --- |
 | `GET` | `/shop/products` | List published products |
-| `GET` | `/shop/product/:id` | Get a published product by id |
+| `GET` | `/shop/products/:id` | Get a published product by id |
 
 ## Layout
 

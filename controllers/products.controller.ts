@@ -1,6 +1,10 @@
 import { Request, Response } from "express";
 import Product from "../models/product.model";
-import type { ProductInput } from "../types/product.types";
+import type {
+  DeleteProductBody,
+  EditProductBody,
+  ProductInput,
+} from "../types/product.types";
 
 export const addProduct = (
   req: Request<unknown, unknown, ProductInput>,
@@ -12,6 +16,50 @@ export const addProduct = (
     message: "Product added successfully",
     data: savedProduct,
   });
+};
+
+export const editProduct = (
+  req: Request<unknown, unknown, EditProductBody>,
+  res: Response,
+) => {
+  const { id, ...productData } = req.body;
+  const parsedId = Product.parseId(id);
+
+  if (parsedId === null) {
+    return res.status(400).json({
+      message: "id must be a positive integer",
+    });
+  }
+
+  const updatedProduct = Product.update(parsedId, productData);
+  if (!updatedProduct) {
+    return res.status(404).json({ message: "Product not found" });
+  }
+
+  res.json({
+    message: "Product updated successfully",
+    data: updatedProduct,
+  });
+};
+
+export const deleteProduct = (
+  req: Request<unknown, unknown, DeleteProductBody>,
+  res: Response,
+) => {
+  const parsedId = Product.parseId(req.body.id);
+
+  if (parsedId === null) {
+    return res.status(400).json({
+      message: "id must be a positive integer",
+    });
+  }
+
+  const deleted = Product.delete(parsedId);
+  if (!deleted) {
+    return res.status(404).json({ message: "Product not found" });
+  }
+
+  res.json({ message: "Product deleted successfully" });
 };
 
 export const fetchProducts = (_req: Request, res: Response) => {

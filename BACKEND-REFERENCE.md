@@ -8,6 +8,28 @@ Canonical copy also lives at `~/.cursor/skills/backend-learning-reference/BACKEN
 
 ## Inbox
 
+### 2026-08-24 — Product id rules
+
+- Positive integer ids; next = `max(id) + 1`.
+- `Product.parseId` is the single entry point for URL params and body `id` (number or numeric string).
+- Persist with `id` first; pretty-print `products.json` on write.
+
+### 2026-08-24 — Update and delete
+
+- `Product.update` / `Product.delete` mutate the in-memory list by index, then write the file — never reuse `save()` for edits.
+- Verb routes: `POST /admin/edit-product` and `POST /admin/delete-product` with `id` in the body; REST alternative remains `PUT|PATCH|DELETE /products/:id`.
+- With deletes enabled, new ids must be `max(id) + 1`, not `length + 1`.
+
+### 2026-08-24 — PUT vs PATCH
+
+- PUT = replace the whole resource; PATCH = change only some fields.
+- This app currently uses verb POSTs (`/edit-product`, `/delete-product`); REST would be `PUT|PATCH /products/:id` and `DELETE /products/:id`.
+
+### 2026-08-24 — writeFile vs writeFileSync
+
+- Sync blocks the Node event loop until the disk write finishes; async (`writeFile` / `fs.promises.writeFile`) does not.
+- This learning app uses `writeFileSync` in `Product.save()` — fine for now; prefer async when concurrency matters.
+
 ### 2026-08-24 — Product API layering (this repo)
 
 - Split a fat controller into **types / model / utils / controller / routes**.
@@ -103,10 +125,50 @@ Prefer the **collection**, then the id:
 | List | `GET /products` |
 | One | `GET /products/:id` |
 | Create | `POST /products` |
+| Replace all fields | `PUT /products/:id` |
+| Change some fields | `PATCH /products/:id` |
+| Delete | `DELETE /products/:id` |
 
 Prefer `/products/:id` over `/product/:id` when the list is already `/products`.
 
 Verb routes like `POST /admin/add-product` work for learning; resource-style `POST /admin/products` is cleaner REST later.
+
+### PUT vs PATCH
+
+Both update an **existing** resource (identified by id in the URL). Difference is **how much** of the body you send.
+
+| | **PUT** | **PATCH** |
+| --- | --- | --- |
+| Meaning | **Replace** the whole resource | **Partial** update |
+| Body | Full product (all fields you care about) | Only fields that change |
+| Missing field | Usually treated as “cleared / reset” (you sent the new full state) | Left unchanged |
+| Typical use | Form that edits everything | “Publish this” / “change price only” |
+
+Example product `{ id: 1, title: "Book", price: 10, isPublished: false }`:
+
+```http
+PUT /admin/products/1
+{ "title": "Book", "price": 12, "description": "...", "imageUrl": "...", "isPublished": false }
+```
+
+→ Full replacement. Omitted fields should not silently keep old values if you treat PUT strictly.
+
+```http
+PATCH /admin/products/1
+{ "price": 12 }
+```
+
+→ Only `price` changes; `title`, `isPublished`, etc. stay as they were.
+
+**When to use which**
+
+- **PUT** — client has (or rebuilds) the full resource; “save this entire product.”
+- **PATCH** — client only knows what changed; toggles, single-field edits, partial admin forms.
+- **Neither** — if the resource does not exist yet → **POST** (create). If removing → **DELETE**.
+
+**Idempotency (useful idea):** repeating the same PUT with the same body should leave the same final state. PATCH is often idempotent too when you set fields to absolute values (`"price": 12`), but “increment by 1” style patches are not.
+
+**Your app today:** `POST /admin/edit-product` is fine for learning (action in the path). REST style would be `PUT` or `PATCH` on `/admin/products/:id` and put the id in the URL, not only in the body.
 
 ### Types vs runtime validation
 
@@ -120,7 +182,44 @@ Rules practiced: non-empty trimmed strings for `title` / `description` / `imageU
 
 `products.length + 1` breaks after deletes/gaps.
 
-Safer for a file store: `max(id) + 1` (or a counter). Use that **before** you add delete/update.
+Safer for a file store: `max(id) + 1` (or a counter).
+
+In this app:
+
+- Stored type: positive integer (`ProductRecord.id`).
+- Create: `nextProductId()` = `max(id) + 1`.
+- Input: `Product.parseId(value)` accepts `number` or numeric `string` (URL params are always strings).
+- On disk: `id` is the first field; writes use `JSON.stringify(..., null, 2)`.
+
+---
+
+### Sync vs async file I/O (`writeFile` vs `writeFileSync`)
+
+| API | Style | Effect |
+| --- | --- | --- |
+| `fs.writeFileSync(path, data)` | Synchronous | Function returns only after the write finishes. **Blocks** the event loop — other requests wait. |
+| `fs.writeFile(path, data, cb)` | Callback async | Returns immediately; calls `cb` when done. |
+| `fs.promises.writeFile(path, data)` | Promise async | Use with `async`/`await`. Preferred modern style. |
+
+Same idea for `readFile` / `readFileSync`.
+
+**Why it matters in Express:** one blocked `writeFileSync` on a large file (or slow disk) stalls *every* handler on that process, not only the request that saved.
+
+**Rule of thumb:** learning / tiny JSON store → Sync is OK and simpler. Production APIs → async (`fs.promises`). Databases replace file writes later anyway.
+
+Your code today:
+
+```ts
+fs.writeFileSync(productsFilePath, JSON.stringify(products));
+```
+
+Later shape:
+
+```ts
+await fs.promises.writeFile(productsFilePath, JSON.stringify(products));
+```
+
+(`save()` would become `async`, and controllers would `await product.save()`.)
 
 ---
 
@@ -138,9 +237,9 @@ Safer for a file store: `max(id) + 1` (or a counter). Use that **before** you ad
 
 Ideas not implemented, or “next when ready”:
 
+- [ ] Prefer REST verbs when ready: `PUT|PATCH /products/:id`, `DELETE /products/:id` (instead of `POST /edit-product` / `POST /delete-product`)
 - [ ] Shared 404/400 response helpers (optional; DRY JSON shape)
 - [ ] Async file I/O (`fs.promises`)
-- [ ] `PUT` / `PATCH` / `DELETE` after validation + stable ids
 - [ ] Service layer only when a use case spans multiple models/steps
 - [ ] Align create route with REST (`POST /admin/products`) if you want textbook REST
 - [ ] README layout must stay in sync when folders/files change (easy to forget)
@@ -150,9 +249,9 @@ Ideas not implemented, or “next when ready”:
 ## Quick enhance checklist (learning order)
 
 1. Validate create body → 400
-2. Safer ids (`max(id) + 1`)
+2. ~~Safer ids (`max(id) + 1`)~~ done (needed once delete exists)
 3. Keep docs (README diagram) matching layers
-4. Update / delete endpoints
+4. ~~Update / delete endpoints~~ done (verb-style POSTs; REST verbs still optional)
 5. Async I/O
 6. Service only if workflows appear
 
@@ -174,4 +273,5 @@ data/products.json
 ```
 
 Shop: `Product.fetchPublished` / `fetchPublishedById`  
-Admin: `Product.fetchProducts` / `fetchProductById` + `addProduct` with validation
+Admin: `addProduct`, `editProduct`, `deleteProduct`, `fetchProducts`, `fetchProductById`  
+Model: `save`, `update`, `delete`, plus fetch helpers
