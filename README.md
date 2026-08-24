@@ -5,6 +5,7 @@ Express and TypeScript backend learning project. Products are stored in a JSON f
 - [Changelog](CHANGELOG.md) — shipped API and product changes
 - [Learning log](LEARNING.md) — backend concepts practiced here
 - [Backend reference](BACKEND-REFERENCE.md) — durable mentor notes (naming, layers, drafts) for later projects
+- [Postman collection](postman/backend-concepts.postman_collection.json) — import into Postman (`baseUrl` = `http://localhost:3040`). When the API changes, update this file and sync it to Postman (MCP).
 
 ## Setup
 
@@ -80,17 +81,40 @@ Shop routes return only products with `isPublished: true`.
 | `GET` | `/shop/products` | List published products |
 | `GET` | `/shop/products/:id` | Get a published product by id |
 
+### Cart
+
+Cart only accepts **published** products. Adding the same `productId` again increases quantity.
+
+| Method | Path | Description |
+| --- | --- | --- |
+| `GET` | `/cart` | Get cart lines |
+| `POST` | `/cart/items` | Add item (`productId`, `quantity`) |
+| `DELETE` | `/cart/items` | Remove item by `productId` in body |
+| `DELETE` | `/cart` | Clear cart |
+
+Add body:
+
+```json
+{
+  "productId": 2,
+  "quantity": 1
+}
+```
+
 ## Layout
 
 ```
 app.ts                      # Express app, middleware, 404 handler
 routes/admin.route.ts       # Admin product routes
 routes/shop.route.ts        # Shop product routes
+routes/cart.route.ts        # Cart routes
 controllers/                # HTTP handlers (status codes + JSON)
-models/                     # Product domain + persistence
-types/                      # Shared ProductInput / ProductRecord types
-utils/                      # JSON file path + load helper
+services/                   # Use-case glue (cart ↔ product)
+models/                     # Product / Cart domain + persistence
+types/                      # Shared input / record types
+utils/                      # JSON file helpers
 data/products.json          # File-backed product store
+data/cart.json              # File-backed cart store
 ```
 
 ```mermaid
@@ -98,12 +122,16 @@ flowchart LR
   Client["HTTP client"] --> App["app.ts\nExpress :3040"]
   App --> Admin["routes/admin.route.ts"]
   App --> Shop["routes/shop.route.ts"]
+  App --> CartRt["routes/cart.route.ts"]
   App --> NotFound["404 JSON"]
-  Admin --> Ctrl["products.controller.ts"]
-  Shop --> Ctrl
-  Ctrl --> Model["product.model.ts"]
-  Model --> Memory["products[]\nin memory"]
-  Model --> File["data/products.json"]
+  Admin --> ProdCtrl["products.controller.ts"]
+  Shop --> ProdCtrl
+  CartRt --> CartCtrl["cart.controller.ts"]
+  ProdCtrl --> ProdModel["product.model.ts"]
+  CartCtrl --> CartSvc["cart.service.ts"]
+  CartSvc --> ProdModel
+  CartSvc --> CartModel["cart.model.ts"]
 ```
 
-A request hits `app.ts`, which parses the body and mounts `/admin` or `/shop`. Both routers call the same controller. The `Product` class keeps the catalog in memory (loaded from JSON on startup) and writes the file on create. Shop handlers filter with `isPublished`; admin handlers return the full catalog.
+A request hits `app.ts`, which parses the body and mounts `/admin`, `/shop`, or `/cart`. Product admin/shop handlers use the product controller and model. Cart handlers use a service that checks published products, then updates the cart file.
+

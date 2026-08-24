@@ -1,5 +1,6 @@
 import fs from "fs";
 import type { ProductInput, ProductRecord } from "../types/product.types";
+import { isPositiveInteger } from "../utils/number.utils";
 import { getProductsFromFile, productsFilePath } from "../utils/product.utils";
 
 const products: ProductRecord[] = getProductsFromFile();
@@ -47,7 +48,7 @@ class Product {
 
   /** Accepts a number or numeric string (e.g. URL param `"3"`). */
   static parseId(value: unknown): number | null {
-    if (typeof value === "number" && Number.isInteger(value) && value > 0) {
+    if (isPositiveInteger(value)) {
       return value;
     }
     if (typeof value === "string" && /^\d+$/.test(value.trim())) {

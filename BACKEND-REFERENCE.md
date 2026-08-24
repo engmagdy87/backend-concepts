@@ -8,6 +8,24 @@ Canonical copy also lives at `~/.cursor/skills/backend-learning-reference/BACKEN
 
 ## Inbox
 
+### 2026-08-24 — Shared utils vs domain utils
+
+- Helpers with **no product/cart meaning** (e.g. `isPositiveInteger`) go in a shared util (`number.utils.ts`), not inside a service or `cart.utils.ts`.
+- Same test: duplicated JSON read/write in `product.utils.ts` / `cart.utils.ts` could become a generic `readJsonFile` / `writeJsonFile`; keep the path + typed wrappers in the domain utils.
+- Domain rules stay on the model (`Product.parseId` still owns “id from number or numeric string”). Do not extract that.
+
+### 2026-08-24 — Postman collection in git
+
+- Keep `postman/*.postman_collection.json` in the repo: it travels with the API, a clone can import without a Postman account, and route changes show up in git diffs.
+- Postman cloud is the **working copy** for sending requests, not the source of truth.
+- Two copies drift. When routes change, update the git file first, then re-import or sync to Postman.
+
+### 2026-08-24 — Cart service (first real orchestration)
+
+- `CartService.addToCart`: validate quantity → `Product.fetchPublishedById` → `Cart.addToCart` (merge qty).
+- Result type `{ ok: true, cart } | { ok: false, reason }`; controller maps `invalid_quantity`→400, `not_found`→404.
+- Mounted at `/cart`: `GET /`, `POST /items`, `DELETE /items`, `DELETE /`.
+
 ### 2026-08-24 — What a service orchestrates
 
 - Example: delete product (Product model) + clear cart lines (Cart model) + notify (email/SMS external API).
@@ -75,7 +93,7 @@ Ask: *is this a question about the product, or a whole workflow?*
 | --- | --- | --- |
 | Domain / data | **Model** | published only, find by id, save + assign id, price ≥ 0 |
 | HTTP glue | **Controller** | `400`/`404`, `res.json`, map `req.params.id` |
-| Generic helper | **Utils** | `path.join`, parse file if empty |
+| Generic helper | **Utils** | `path.join`, parse file if empty, `isPositiveInteger` |
 | Multi-step use case | **Service** (later) | cart + stock + coupon + order |
 
 **Do not** put `isPublished` filtering in utils. That is product meaning.
@@ -287,6 +305,8 @@ Ideas not implemented, or “next when ready”:
 ## This repo (snapshot)
 
 Useful only as an example of the rules above — not a second source of truth.
+
+This project only: when an endpoint is added, changed, or removed, update `postman/backend-concepts.postman_collection.json` and sync it to Postman over MCP (see `.cursor/rules/postman-collection.mdc`).
 
 ```
 app.ts

@@ -1,0 +1,16 @@
+---
+description: Keep the local Postman collection and Postman cloud in sync when the API changes
+alwaysApply: true
+---
+
+# Postman collection sync
+
+When you **add, change, or remove an HTTP endpoint**, update both copies in the same turn. Do not leave Postman stale.
+
+1. **Local first** — edit `postman/backend-concepts.postman_collection.json` (folders, method, path, body, `baseUrl`).
+2. **Then Postman cloud** — sync that same collection through the working Postman MCP (`user-postman-api-mcp`). Prefer replacing the cloud collection with the local file (`putCollection`) so they match.
+
+Cloud collection UID: `35152687-42d4f03c-deec-4df2-886e-1f1e59ad40ea`  
+Workspace: `My Workspace` (`63ac573d-5bc5-4030-8d22-b8438f13895d`)
+
+Skip for internal-only refactors with no route or request-body change.

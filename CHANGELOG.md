@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- Cart API under `/cart` with service layer (published-product check, merge quantities)
 - `POST /admin/update-product` to replace an existing product (body includes `id`)
 - `POST /admin/delete-product` to delete a product by `id`
 

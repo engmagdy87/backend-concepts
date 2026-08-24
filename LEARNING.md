@@ -4,6 +4,12 @@ Notes on backend concepts practiced in this repo. Newest entries first.
 
 Update this file when a feature teaches a concept worth keeping. Skip chores, formatting-only changes, and WIP commits.
 
+## 2026-08-24 — Cart service layer
+
+- Added a cart **service** because add-to-cart talks to Product (published?) and Cart (lines).
+- Service returns `{ ok, reason }` / cart data; controller maps that to HTTP (`400` / `404` / `201`).
+- Cart model merges quantity when the same `productId` is added again.
+
 ## 2026-08-24 — Product id rules
 
 - Ids are positive integers; next id is `max(existing id) + 1` (safe after deletes).
