@@ -1,0 +1,14 @@
+---
+description: Keep BACKEND-REFERENCE.md updated when mentoring or teaching backend concepts
+alwaysApply: true
+---
+
+# Living backend notes
+
+When explaining architecture, naming, layers, REST, validation, or reviewing backend structure:
+
+1. Follow the personal skill `backend-learning-reference`.
+2. Update `BACKEND-REFERENCE.md` (repo root) in the same turn as the explanation.
+3. Also update `~/.cursor/skills/backend-learning-reference/BACKEND-REFERENCE.md` so notes survive this repo.
+
+Do not duplicate `LEARNING.md` (short practice log) or `CHANGELOG.md` (shipped API). This file is the long-term mindset notebook (concepts, side notes, drafts).

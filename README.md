@@ -4,6 +4,7 @@ Express and TypeScript backend learning project. Products are stored in a JSON f
 
 - [Changelog](CHANGELOG.md) — shipped API and product changes
 - [Learning log](LEARNING.md) — backend concepts practiced here
+- [Backend reference](BACKEND-REFERENCE.md) — durable mentor notes (naming, layers, drafts) for later projects
 
 ## Setup
 
