@@ -8,6 +8,12 @@ Canonical copy also lives at `~/.cursor/skills/backend-learning-reference/BACKEN
 
 ## Inbox
 
+### 2026-08-24 — DB credentials in `.env`
+
+- Host / user / password / database name live in `.env`, never in source.
+- Gitignore `.env`. Node does not load it by itself — use `dotenv` at startup (`import "dotenv/config"`).
+- One pool reads `process.env.DB_*`; models use the pool, they do not open their own connections.
+
 ### 2026-08-24 — Cart add/remove are commands (+1 / −1)
 
 - Quantity is **stored state** on the cart line, not an input on add.
@@ -287,6 +293,7 @@ await fs.promises.writeFile(productsFilePath, JSON.stringify(products));
 - Dead imports (controller importing unused file helpers) hide who owns I/O. Controllers should not touch file utils.
 - `CHANGELOG.md` = public API/behavior. `LEARNING.md` = short “I practiced X on this date.” This file = mindset for the next project.
 - Skip changelog for internal refactors with no API change; still log the concept here if it is reusable.
+- `.env` is local secrets. Gitignore it. Node needs `dotenv` to read it.
 
 ---
 
@@ -300,6 +307,8 @@ Ideas not implemented, or “next when ready”:
 - [ ] Service layer only when a use case spans multiple models/steps
 - [ ] Align create route with REST (`POST /admin/products`) if you want textbook REST
 - [ ] README layout must stay in sync when folders/files change (easy to forget)
+- [ ] Ping MySQL at boot (`SELECT 1`) before `app.listen`
+- [ ] Swap JSON persistence for SQL one model at a time
 
 ---
 
