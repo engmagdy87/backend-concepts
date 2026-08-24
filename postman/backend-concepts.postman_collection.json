@@ -131,7 +131,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"productId\": 2,\n  \"quantity\": 1\n}"
+              "raw": "{\n  \"productId\": 2\n}"
             },
             "url": "{{baseUrl}}/cart/items"
           }

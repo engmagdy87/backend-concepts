@@ -7,11 +7,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
-- Cart API under `/cart` with service layer (published-product check, merge quantities)
+- Cart API under `/cart` with service layer (published-product check; add/remove one unit)
 - `POST /admin/update-product` to replace an existing product (body includes `id`)
 - `POST /admin/delete-product` to delete a product by `id`
 
 ### Changed
+- `POST /cart/items` adds one unit (`productId` only); stored line quantity is not a request field. `DELETE /cart/items` decrements by one
 - Split product handling into `types/`, `models/`, `utils/`, and thin controllers; routes renamed to `*.route.ts`
 - Product ids are positive integers: created with `max(id) + 1`, parsed via `Product.parseId` (number or numeric string), written with `id` first in `products.json`
 - Renamed admin update API from `edit-product` / `editProduct` to `update-product` / `updateProduct`

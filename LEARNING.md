@@ -4,11 +4,17 @@ Notes on backend concepts practiced in this repo. Newest entries first.
 
 Update this file when a feature teaches a concept worth keeping. Skip chores, formatting-only changes, and WIP commits.
 
+## 2026-08-24 — Cart add/remove are +1 / −1
+
+- Quantity lives on the **cart line** (stored state), not on the add request.
+- `POST /cart/items` is a command: add one. Repeat to increase. `DELETE /cart/items` subtracts one and removes the line at 0.
+- A client-chosen quantity belongs on a later update endpoint if you need bulk add.
+
 ## 2026-08-24 — Cart service layer
 
 - Added a cart **service** because add-to-cart talks to Product (published?) and Cart (lines).
 - Service returns `{ ok, reason }` / cart data; controller maps that to HTTP (`400` / `404` / `201`).
-- Cart model merges quantity when the same `productId` is added again.
+- Cart model increments stored quantity when the same `productId` is added again.
 
 ## 2026-08-24 — Product id rules
 

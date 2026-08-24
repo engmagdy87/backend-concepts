@@ -15,14 +15,9 @@ export const addToCart = (
   req: Request<unknown, unknown, AddToCartBody>,
   res: Response,
 ) => {
-  const result = addToCartService(req.body.productId, req.body.quantity);
+  const result = addToCartService(req.body.productId);
 
   if (!result.ok) {
-    if (result.reason === "invalid_quantity") {
-      return res.status(400).json({
-        message: "quantity must be a positive integer",
-      });
-    }
     return res.status(404).json({
       message: "Product not found or not published",
     });

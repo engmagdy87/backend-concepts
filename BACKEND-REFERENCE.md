@@ -8,6 +8,18 @@ Canonical copy also lives at `~/.cursor/skills/backend-learning-reference/BACKEN
 
 ## Inbox
 
+### 2026-08-24 — Cart add/remove are commands (+1 / −1)
+
+- Quantity is **stored state** on the cart line, not an input on add.
+- `POST /cart/items` `{ productId }` adds one; `DELETE /cart/items` subtracts one and drops the line at 0.
+- Client-chosen quantity belongs on a later update (e.g. `PATCH`) if you need bulk add.
+
+### 2026-08-24 — splice vs filter
+
+- `filter` builds a **new** array (“cart without this productId”). Use it when the whole line should disappear in one step.
+- `splice` **mutates** the array you already have. Use it when you already found the item (e.g. decrement qty, then drop the line at 0). Same style as `addToCart` (`push` / mutate qty).
+- `indexOf(existingItem)` is reference equality. Safer: `findIndex` so you splice a known index. Never `splice(-1, 1)` — that deletes the last item.
+
 ### 2026-08-24 — Shared utils vs domain utils
 
 - Helpers with **no product/cart meaning** (e.g. `isPositiveInteger`) go in a shared util (`number.utils.ts`), not inside a service or `cart.utils.ts`.
@@ -22,8 +34,8 @@ Canonical copy also lives at `~/.cursor/skills/backend-learning-reference/BACKEN
 
 ### 2026-08-24 — Cart service (first real orchestration)
 
-- `CartService.addToCart`: validate quantity → `Product.fetchPublishedById` → `Cart.addToCart` (merge qty).
-- Result type `{ ok: true, cart } | { ok: false, reason }`; controller maps `invalid_quantity`→400, `not_found`→404.
+- `CartService.addToCart`: `Product.fetchPublishedById` → `Cart.addToCart` (+1).
+- Result type `{ ok: true, cart } | { ok: false, reason: "not_found" }`; controller maps not found → 404.
 - Mounted at `/cart`: `GET /`, `POST /items`, `DELETE /items`, `DELETE /`.
 
 ### 2026-08-24 — What a service orchestrates

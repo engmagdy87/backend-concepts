@@ -83,21 +83,20 @@ Shop routes return only products with `isPublished: true`.
 
 ### Cart
 
-Cart only accepts **published** products. Adding the same `productId` again increases quantity.
+Cart only accepts **published** products. `POST /cart/items` adds **one** unit; repeating the same `productId` increments the stored line quantity. `DELETE /cart/items` decrements by one and drops the line at 0.
 
 | Method | Path | Description |
 | --- | --- | --- |
 | `GET` | `/cart` | Get cart lines |
-| `POST` | `/cart/items` | Add item (`productId`, `quantity`) |
-| `DELETE` | `/cart/items` | Remove item by `productId` in body |
+| `POST` | `/cart/items` | Add one unit (`productId` only) |
+| `DELETE` | `/cart/items` | Remove one unit (`productId` in body) |
 | `DELETE` | `/cart` | Clear cart |
 
-Add body:
+Add / remove body:
 
 ```json
 {
-  "productId": 2,
-  "quantity": 1
+  "productId": 2
 }
 ```
 

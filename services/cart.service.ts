@@ -1,20 +1,12 @@
 import Cart from "../models/cart.model";
 import Product from "../models/product.model";
 import type { AddToCartResult, CartItem } from "../types/cart.types";
-import { isPositiveInteger } from "../utils/number.utils";
 
-export const addToCartService = (
-  productId: unknown,
-  quantity: unknown,
-): AddToCartResult => {
+export const addToCartService = (productId: unknown): AddToCartResult => {
   const parsedProductId = Product.parseId(productId);
 
   if (parsedProductId === null) {
     return { ok: false, reason: "not_found" };
-  }
-
-  if (!isPositiveInteger(quantity)) {
-    return { ok: false, reason: "invalid_quantity" };
   }
 
   const product = Product.fetchPublishedById(parsedProductId);
@@ -22,7 +14,7 @@ export const addToCartService = (
     return { ok: false, reason: "not_found" };
   }
 
-  Cart.addToCart(parsedProductId, quantity);
+  Cart.addToCart(parsedProductId);
   return { ok: true, cart: Cart.getCart() };
 };
 
