@@ -1,8 +1,8 @@
 import express from "express";
 import bodyParser from "body-parser";
 
-import adminRoutes from "./routes/admin";
-import shopRoutes from "./routes/shop";
+import adminRoutes from "./routes/admin.route";
+import shopRoutes from "./routes/shop.route";
 
 const app = express();
 

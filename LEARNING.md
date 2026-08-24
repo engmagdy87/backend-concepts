@@ -4,6 +4,12 @@ Notes on backend concepts practiced in this repo. Newest entries first.
 
 Update this file when a feature teaches a concept worth keeping. Skip chores, formatting-only changes, and WIP commits.
 
+## 2026-08-24 — Layered product modules
+
+- Split types, model, utils, and controller so HTTP stays thin and product rules live on the model.
+- Kept one in-memory product list as the source of truth; utils only load/save the JSON file.
+- Moved shop filtering onto `Product.fetchPublished` / `fetchPublishedById` instead of re-reading the file in utils.
+
 ## 2026-08-24 — Express product API on JSON files
 
 - Split HTTP routes by role: `admin` (full catalog + create) vs `shop` (published catalog only).
