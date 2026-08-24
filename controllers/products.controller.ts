@@ -14,8 +14,8 @@ export const addProduct = (
   });
 };
 
-export const fetchAll = (_req: Request, res: Response) => {
-  const products = Product.fetchAll();
+export const fetchProducts = (_req: Request, res: Response) => {
+  const products = Product.fetchProducts();
   res.json({ data: products });
 };
 

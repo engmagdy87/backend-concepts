@@ -26,7 +26,7 @@ class Product {
     return newProduct;
   }
 
-  static fetchAll(): ProductRecord[] {
+  static fetchProducts(): ProductRecord[] {
     return products;
   }
 

@@ -1,7 +1,7 @@
 import express from "express";
 import {
   addProduct,
-  fetchAll,
+  fetchProducts,
   fetchProductById,
 } from "../controllers/products.controller";
 
@@ -9,8 +9,8 @@ const router = express.Router();
 
 router.post("/add-product", addProduct);
 
-router.get("/products", fetchAll);
+router.get("/products", fetchProducts);
 
-router.get("/product/:id", fetchProductById);
+router.get("/products/:id", fetchProductById);
 
 export default router;

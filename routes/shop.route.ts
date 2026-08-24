@@ -8,6 +8,6 @@ const router = express.Router();
 
 router.get("/products", fetchShoppingProducts);
 
-router.get("/product/:id", fetchShoppingProductById);
+router.get("/products/:id", fetchShoppingProductById);
 
 export default router;
