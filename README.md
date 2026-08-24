@@ -57,23 +57,27 @@ Shop routes return only products with `isPublished: true`.
 ## Layout
 
 ```
-app.ts                 # Express app, middleware, 404 handler
-routes/admin.ts        # Admin product routes
-routes/shop.ts         # Shop product routes
-controllers/           # Product model + request handlers
-data/products.json     # File-backed product store
+app.ts                      # Express app, middleware, 404 handler
+routes/admin.route.ts       # Admin product routes
+routes/shop.route.ts        # Shop product routes
+controllers/                # HTTP handlers (status codes + JSON)
+models/                     # Product domain + persistence
+types/                      # Shared ProductInput / ProductRecord types
+utils/                      # JSON file path + load helper
+data/products.json          # File-backed product store
 ```
 
 ```mermaid
 flowchart LR
   Client["HTTP client"] --> App["app.ts\nExpress :3040"]
-  App --> Admin["routes/admin.ts"]
-  App --> Shop["routes/shop.ts"]
+  App --> Admin["routes/admin.route.ts"]
+  App --> Shop["routes/shop.route.ts"]
   App --> NotFound["404 JSON"]
   Admin --> Ctrl["products.controller.ts"]
   Shop --> Ctrl
-  Ctrl --> Memory["products[]\nin memory"]
-  Ctrl --> File["data/products.json"]
+  Ctrl --> Model["product.model.ts"]
+  Model --> Memory["products[]\nin memory"]
+  Model --> File["data/products.json"]
 ```
 
 A request hits `app.ts`, which parses the body and mounts `/admin` or `/shop`. Both routers call the same controller. The `Product` class keeps the catalog in memory (loaded from JSON on startup) and writes the file on create. Shop handlers filter with `isPublished`; admin handlers return the full catalog.
