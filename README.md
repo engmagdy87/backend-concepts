@@ -32,7 +32,7 @@ JSON request bodies are accepted. Unknown routes return `404` with `{ "message":
 | Method | Path | Description |
 | --- | --- | --- |
 | `POST` | `/admin/add-product` | Create a product |
-| `PATCH` | `/admin/products/:id` | Partial update (id in the URL; body is only fields to change) |
+| `PUT` | `/admin/products/:id` | Replace an existing product (id in the URL; full body) |
 | `POST` | `/admin/delete-product` | Delete a product (body includes `id`) |
 | `GET` | `/admin/products` | List all products |
 | `GET` | `/admin/products/:id` | Get a product by id |
@@ -51,11 +51,14 @@ Create body:
 
 The server assigns a positive integer `id` (`max(existing id) + 1`). Delete accepts `id` as a number or numeric string.
 
-Update body (any subset of fields; `id` is in the URL):
+Update body (same fields as create; `id` is in the URL):
 
 ```json
 {
+  "title": "A book",
   "price": 24.99,
+  "description": "A useful book",
+  "imageUrl": "https://example.com/book.png",
   "isPublished": true
 }
 ```

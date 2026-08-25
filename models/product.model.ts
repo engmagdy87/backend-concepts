@@ -66,40 +66,18 @@ class Product {
 
   static async update(
     id: number,
-    productData: Partial<ProductInput>,
+    productData: ProductInput,
   ): Promise<ProductRecord | undefined> {
-    const setClauses: string[] = [];
-    const values: (string | number | boolean)[] = [];
-
-    if (productData.title !== undefined) {
-      setClauses.push("title = ?");
-      values.push(productData.title);
-    }
-    if (productData.price !== undefined) {
-      setClauses.push("price = ?");
-      values.push(productData.price);
-    }
-    if (productData.description !== undefined) {
-      setClauses.push("description = ?");
-      values.push(productData.description);
-    }
-    if (productData.imageUrl !== undefined) {
-      setClauses.push("imageUrl = ?");
-      values.push(productData.imageUrl);
-    }
-    if (productData.isPublished !== undefined) {
-      setClauses.push("isPublished = ?");
-      values.push(productData.isPublished);
-    }
-
-    if (setClauses.length === 0) {
-      return undefined;
-    }
-
-    values.push(id);
     await db.execute(
-      `UPDATE products SET ${setClauses.join(", ")} WHERE id = ?`,
-      values,
+      "UPDATE products SET title = ?, price = ?, description = ?, imageUrl = ?, isPublished = ? WHERE id = ?",
+      [
+        productData.title,
+        productData.price,
+        productData.description,
+        productData.imageUrl,
+        productData.isPublished,
+        id,
+      ],
     );
 
     const [rows] = await db.execute("SELECT * FROM products WHERE id = ?", [

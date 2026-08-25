@@ -4,11 +4,16 @@ Notes on backend concepts practiced in this repo. Newest entries first.
 
 Update this file when a feature teaches a concept worth keeping. Skip chores, formatting-only changes, and WIP commits.
 
+## 2026-08-25 — PUT for a simple full replace
+
+- Update is `PUT /admin/products/:id`: id in the URL, body is the full product (same fields as create).
+- Model `SET`s every column in one statement. PATCH’s dynamic `SET` is extra machinery when the client already sends the whole resource.
+- After `UPDATE`, `SELECT` the row for 404. `affectedRows === 0` is not “not found” — MySQL also reports 0 when the row exists but nothing changed.
+
 ## 2026-08-25 — PATCH is partial, id in the URL
 
-- Replaced `POST /admin/update-product` (id in the body) with `PATCH /admin/products/:id`.
-- Body is only the fields to change. Empty body is `400`. SQL `SET` lists only those columns (names stay hardcoded, not taken from the client).
-- After `UPDATE`, `SELECT` the row. `affectedRows === 0` is not “not found” — MySQL also reports 0 when the row exists but nothing changed.
+- Practiced `PATCH` first: partial body and a `SET` built only from present fields.
+- Switched to PUT so the SQL stays one fixed `UPDATE` instead of assembling columns.
 
 ## 2026-08-25 — Create returns insertId
 

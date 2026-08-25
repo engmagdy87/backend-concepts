@@ -19,7 +19,7 @@ export const addProduct = async (
 };
 
 export const updateProduct = async (
-  req: Request<{ id: string }, unknown, Partial<ProductInput>>,
+  req: Request<{ id: string }, unknown, ProductInput>,
   res: Response,
 ) => {
   const parsedId = Product.parseId(req.params.id);
@@ -30,21 +30,7 @@ export const updateProduct = async (
     });
   }
 
-  const productData = req.body;
-  const hasPatch =
-    productData.title !== undefined ||
-    productData.price !== undefined ||
-    productData.description !== undefined ||
-    productData.imageUrl !== undefined ||
-    productData.isPublished !== undefined;
-
-  if (!hasPatch) {
-    return res.status(400).json({
-      message: "body must include at least one field to update",
-    });
-  }
-
-  const updatedProduct = await Product.update(parsedId, productData);
+  const updatedProduct = await Product.update(parsedId, req.body);
   if (!updatedProduct) {
     return res.status(404).json({ message: "Product not found" });
   }

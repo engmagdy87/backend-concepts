@@ -8,12 +8,17 @@ Canonical copy also lives at `~/.cursor/skills/backend-learning-reference/BACKEN
 
 ## Inbox
 
-### 2026-08-25 — PATCH: partial SET, id in the URL
+### 2026-08-25 — PUT when the client already has the full resource
 
-- Update is `PATCH /admin/products/:id`. Body is `Partial<ProductInput>`; empty body is 400.
-- Model builds `SET` only for keys that are present. Column names stay hardcoded (never interpolate client keys into SQL).
+- Update is `PUT /admin/products/:id`. Body is full `ProductInput`; one fixed `SET` of every column. Simpler than PATCH’s dynamic `SET`.
 - After UPDATE, `SELECT` the row. Do not use `affectedRows === 0` for 404 — MySQL reports 0 when the row exists but values did not change.
 - Map `isPublished` with `Boolean(...)` on that SELECT. Delete is still `POST /admin/delete-product` with `id` in the body.
+- PATCH stays the right verb when the client only sends changed fields; this app chose PUT because the form is already a full product.
+
+### 2026-08-25 — PATCH: partial SET, id in the URL
+
+- PATCH = partial body + `SET` only for present fields. Column names stay hardcoded (never interpolate client keys into SQL).
+- Practiced then replaced with PUT for a fixed full-column `UPDATE`.
 
 ### 2026-08-25 — Create returns the row, not void
 
@@ -244,7 +249,7 @@ PATCH /admin/products/1
 
 **Idempotency (useful idea):** repeating the same PUT with the same body should leave the same final state. PATCH is often idempotent too when you set fields to absolute values (`"price": 12`), but “increment by 1” style patches are not.
 
-**Your app today:** update is `PATCH /admin/products/:id` (partial body, id in the URL). Delete is still a verb POST (`POST /admin/delete-product` with `id` in the body).
+**Your app today:** update is `PUT /admin/products/:id` (full body, id in the URL). Delete is still a verb POST (`POST /admin/delete-product` with `id` in the body).
 
 ### Types vs runtime validation
 
@@ -314,7 +319,8 @@ await fs.promises.writeFile(productsFilePath, JSON.stringify(products));
 
 Ideas not implemented, or “next when ready”:
 
-- [x] `PATCH /admin/products/:id` (partial body; id in the URL)
+- [x] `PUT /admin/products/:id` (full body; id in the URL)
+- [ ] `PATCH /admin/products/:id` if you later want partial updates
 - [ ] `DELETE /admin/products/:id` (still `POST /admin/delete-product`)
 - [ ] Shared 404/400 response helpers (optional; DRY JSON shape)
 - [ ] Async file I/O (`fs.promises`)
