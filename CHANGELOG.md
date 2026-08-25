@@ -17,6 +17,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `POST /admin/delete-product` returns `404` when no MySQL row matches
 
 ### Changed
+- `POST /cart/items` writes MySQL `cart_items`: increment quantity if the product is already in the cart, otherwise insert a row with quantity 1. Remove still uses `data/cart.json`.
 - Product persistence is MySQL only (`data/products.json` and `product.utils.ts` removed). Cart remains `data/cart.json`.
 - Replaced `POST /admin/update-product` with `PUT /admin/products/:id` (full body; id in the URL)
 - `POST /cart/items` adds one unit (`productId` only); stored line quantity is not a request field. `DELETE /cart/items` decrements by one

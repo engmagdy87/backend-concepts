@@ -16,27 +16,27 @@ export const addToCartService = async (
     return { ok: false, reason: "not_found" };
   }
 
-  Cart.addToCart(parsedProductId);
-  return { ok: true, cart: Cart.getCart() };
+  await Cart.addToCart(parsedProductId);
+  return { ok: true, cart: await Cart.getCart() };
 };
 
-export const getCartService = (): CartItem[] => {
-  return Cart.getCart();
+export const getCartService = async (): Promise<CartItem[]> => {
+  return await Cart.getCart();
 };
 
-export const removeFromCartService = (
+export const removeFromCartService = async (
   productId: unknown,
-): CartItem[] | null => {
+): Promise<CartItem[] | undefined> => {
   const parsedProductId = Product.parseId(productId);
   if (parsedProductId === null) {
-    return null;
+    return undefined;
   }
 
-  Cart.removeFromCart(parsedProductId);
-  return Cart.getCart();
+  await Cart.removeFromCart(parsedProductId);
+  return await Cart.getCart();
 };
 
-export const clearCartService = (): CartItem[] => {
-  Cart.clearCart();
+export const clearCartService = async (): Promise<CartItem[]> => {
+  await Cart.clearCart();
   return Cart.getCart();
 };

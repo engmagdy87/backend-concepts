@@ -1,41 +1,57 @@
-import { getCartFromFile, writeCartToFile } from "../utils/cart.utils";
+import { CartItem } from "../types/cart.types";
+import db from "../utils/database.utils";
 
 class Cart {
-  static addToCart(productId: number) {
-    const cart = getCartFromFile();
-    const existingItem = cart.find((item) => item.productId === productId);
+  static async addToCart(productId: number) {
+    const [rows] = await db.execute(
+      "SELECT * FROM cart_items WHERE productId = ?",
+      [productId],
+    );
+    const existingItem = (rows as CartItem[])[0];
 
     if (existingItem) {
-      existingItem.quantity += 1;
+      await db.execute(
+        "UPDATE cart_items SET quantity = quantity + 1 WHERE productId = ?",
+        [productId],
+      );
     } else {
-      cart.push({ productId, quantity: 1 });
+      await db.execute(
+        "INSERT INTO cart_items (productId, quantity) VALUES (?, ?)",
+        [productId, 1],
+      );
     }
-
-    writeCartToFile(cart);
   }
 
-  static removeFromCart(productId: number) {
-    const cart = getCartFromFile();
-    const existingItem = cart.find((item) => item.productId === productId);
+  static async removeFromCart(productId: number) {
+    const [rows] = await db.execute(
+      "SELECT * FROM cart_items WHERE productId = ?",
+      [productId],
+    );
+    const existingItem = (rows as CartItem[])[0];
 
     if (!existingItem) {
       return;
     }
 
-    existingItem.quantity -= 1;
-    if (existingItem.quantity === 0) {
-      cart.splice(cart.indexOf(existingItem), 1);
+    if (existingItem.quantity === 1) {
+      await db.execute("DELETE FROM cart_items WHERE productId = ?", [
+        productId,
+      ]);
+    } else {
+      await db.execute(
+        "UPDATE cart_items SET quantity = quantity - 1 WHERE productId = ?",
+        [productId],
+      );
     }
-
-    writeCartToFile(cart);
   }
 
-  static clearCart() {
-    writeCartToFile([]);
+  static async clearCart() {
+    await db.execute("DELETE FROM cart_items");
   }
 
-  static getCart() {
-    return getCartFromFile();
+  static async getCart() {
+    const [rows] = await db.execute("SELECT * FROM cart_items");
+    return rows as CartItem[];
   }
 }
 

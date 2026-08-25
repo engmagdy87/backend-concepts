@@ -7,8 +7,8 @@ import {
 } from "../services/cart.service";
 import type { AddToCartBody, RemoveFromCartBody } from "../types/cart.types";
 
-export const getCart = (_req: Request, res: Response) => {
-  res.json({ data: getCartService() });
+export const getCart = async (_req: Request, res: Response) => {
+  res.json({ data: await getCartService() });
 };
 
 export const addToCart = async (
@@ -29,11 +29,11 @@ export const addToCart = async (
   });
 };
 
-export const removeFromCart = (
+export const removeFromCart = async (
   req: Request<unknown, unknown, RemoveFromCartBody>,
   res: Response,
 ) => {
-  const cart = removeFromCartService(req.body.productId);
+  const cart = await removeFromCartService(req.body.productId);
 
   if (cart === null) {
     return res.status(400).json({
@@ -47,8 +47,8 @@ export const removeFromCart = (
   });
 };
 
-export const clearCart = (_req: Request, res: Response) => {
-  const cart = clearCartService();
+export const clearCart = async (_req: Request, res: Response) => {
+  const cart = await clearCartService();
   res.json({
     message: "Cart cleared",
     data: cart,

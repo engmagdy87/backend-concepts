@@ -8,6 +8,12 @@ Canonical copy also lives at `~/.cursor/skills/backend-learning-reference/BACKEN
 
 ## Inbox
 
+### 2026-08-25 — SQL: find then increment or insert
+
+- In a file, `find` then mutate qty or `push`. In SQL that is `SELECT` by `productId`, then `UPDATE quantity + 1` or `INSERT`.
+- Do not mix stores: a leftover `INSERT` plus a JSON write means `GET` (SQL) and add (file) disagree.
+- `INSERT ... ON DUPLICATE KEY UPDATE` is the one-statement version; it needs `UNIQUE(productId)` and hides the check. This repo kept the explicit branch.
+
 ### 2026-08-25 — Products are MySQL; cart is still a file
 
 - Product catalog no longer has a JSON store. `save` / `update` / `delete` / all fetches use the pool. `data/products.json` and `product.utils.ts` are gone.
@@ -167,6 +173,8 @@ Pick one:
 - Always read from disk (no module cache).
 
 Do **not** mix: admin reads memory, shop re-reads the file. Subtle bugs later.
+
+Same rule for SQL vs a JSON file: one entity, one store. Cart add/get/clear use `cart_items`; do not also write `data/cart.json` on add.
 
 ### Naming — code
 
@@ -336,7 +344,7 @@ Ideas not implemented, or “next when ready”:
 - [ ] README layout must stay in sync when folders/files change (easy to forget)
 - [ ] Ping MySQL at boot (`SELECT 1`) before `app.listen`
 - [x] Product model on MySQL (`data/products.json` removed)
-- [ ] Cart still JSON (`data/cart.json`) — migrate later
+- [ ] Cart remove still JSON (`data/cart.json`); add / get / clear use `cart_items`
 
 ---
 

@@ -4,6 +4,12 @@ Notes on backend concepts practiced in this repo. Newest entries first.
 
 Update this file when a feature teaches a concept worth keeping. Skip chores, formatting-only changes, and WIP commits.
 
+## 2026-08-25 — Cart add: SELECT then UPDATE or INSERT
+
+- File logic (`find` → quantity++ / `push`) becomes SQL: `SELECT` by `productId`, then `UPDATE quantity = quantity + 1` or `INSERT` with quantity 1.
+- One store per entity. A leftover `INSERT` plus a JSON write meant `GET` (SQL) and add (file) disagreed.
+- When the model is `async`, the service must `await` both `addToCart` and `getCart`.
+
 ## 2026-08-25 — Products leave the JSON file
 
 - Catalog, shop, get-by-id, update, and delete all hit MySQL. `data/products.json` is gone. Cart still uses `data/cart.json`.
