@@ -2,14 +2,16 @@ import Cart from "../models/cart.model";
 import Product from "../models/product.model";
 import type { AddToCartResult, CartItem } from "../types/cart.types";
 
-export const addToCartService = (productId: unknown): AddToCartResult => {
+export const addToCartService = async (
+  productId: unknown,
+): Promise<AddToCartResult> => {
   const parsedProductId = Product.parseId(productId);
 
   if (parsedProductId === null) {
     return { ok: false, reason: "not_found" };
   }
 
-  const product = Product.fetchPublishedById(parsedProductId);
+  const product = await Product.fetchPublishedById(parsedProductId);
   if (!product) {
     return { ok: false, reason: "not_found" };
   }

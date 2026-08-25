@@ -1,9 +1,6 @@
 import { Request, Response } from "express";
 import Product from "../models/product.model";
-import type {
-  DeleteProductBody,
-  ProductInput,
-} from "../types/product.types";
+import type { DeleteProductBody, ProductInput } from "../types/product.types";
 
 export const addProduct = async (
   req: Request<unknown, unknown, ProductInput>,
@@ -41,7 +38,7 @@ export const updateProduct = async (
   });
 };
 
-export const deleteProduct = (
+export const deleteProduct = async (
   req: Request<unknown, unknown, DeleteProductBody>,
   res: Response,
 ) => {
@@ -53,7 +50,7 @@ export const deleteProduct = (
     });
   }
 
-  const deleted = Product.delete(parsedId);
+  const deleted = await Product.delete(parsedId);
   if (!deleted) {
     return res.status(404).json({ message: "Product not found" });
   }
@@ -66,27 +63,27 @@ export const fetchProducts = async (_req: Request, res: Response) => {
   res.json({ data: products });
 };
 
-export const fetchProductById = (
+export const fetchProductById = async (
   req: Request<{ id: string }>,
   res: Response,
 ) => {
-  const product = Product.fetchProductById(req.params.id);
+  const product = await Product.fetchProductById(req.params.id);
   if (!product) {
     return res.status(404).json({ message: "Product not found" });
   }
   res.json({ data: product });
 };
 
-export const fetchShoppingProducts = (_req: Request, res: Response) => {
-  const products = Product.fetchPublished();
+export const fetchShoppingProducts = async (_req: Request, res: Response) => {
+  const products = await Product.fetchPublished();
   res.json({ data: products });
 };
 
-export const fetchShoppingProductById = (
+export const fetchShoppingProductById = async (
   req: Request<{ id: string }>,
   res: Response,
 ) => {
-  const product = Product.fetchPublishedById(req.params.id);
+  const product = await Product.fetchPublishedById(req.params.id);
   if (!product) {
     return res.status(404).json({ message: "Product not found" });
   }

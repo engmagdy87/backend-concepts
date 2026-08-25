@@ -1,11 +1,7 @@
-import fs from "fs";
 import type { ResultSetHeader } from "mysql2";
 import db from "../utils/database.utils";
 import type { ProductInput, ProductRecord } from "../types/product.types";
 import { isPositiveInteger } from "../utils/number.utils";
-import { getProductsFromFile, productsFilePath } from "../utils/product.utils";
-
-const products: ProductRecord[] = getProductsFromFile();
 
 function toProductRecord(id: number, productData: ProductInput): ProductRecord {
   return {
@@ -16,10 +12,6 @@ function toProductRecord(id: number, productData: ProductInput): ProductRecord {
     imageUrl: productData.imageUrl,
     isPublished: productData.isPublished,
   };
-}
-
-function writeProductsToFile(): void {
-  fs.writeFileSync(productsFilePath, JSON.stringify(products, null, 2));
 }
 
 class Product {
@@ -91,14 +83,8 @@ class Product {
     return { ...row, isPublished: Boolean(row.isPublished) };
   }
 
-  static delete(id: number): boolean {
-    const index = products.findIndex((product) => product.id === id);
-    if (index === -1) {
-      return false;
-    }
-
-    products.splice(index, 1);
-    writeProductsToFile();
+  static async delete(id: number): Promise<boolean> {
+    await db.execute("DELETE FROM products WHERE id = ?", [id]);
     return true;
   }
 
@@ -110,26 +96,41 @@ class Product {
     }));
   }
 
-  static fetchProductById(id: unknown): ProductRecord | undefined {
+  static async fetchProductById(
+    id: unknown,
+  ): Promise<ProductRecord | undefined> {
     const parsedId = Product.parseId(id);
     if (parsedId === null) {
       return undefined;
     }
-    return products.find((product) => product.id === parsedId);
+    const [rows] = await db.execute("SELECT * FROM products WHERE id = ?", [
+      parsedId,
+    ]);
+    return (rows as ProductRecord[])[0];
   }
 
-  static fetchPublished(): ProductRecord[] {
-    return products.filter((product) => product.isPublished);
-  }
-
-  static fetchPublishedById(id: unknown): ProductRecord | undefined {
-    const parsedId = Product.parseId(id);
-    if (parsedId === null) {
-      return undefined;
-    }
-    return products.find(
-      (product) => product.isPublished && product.id === parsedId,
+  static async fetchPublished(): Promise<ProductRecord[]> {
+    const [rows] = await db.execute(
+      "SELECT * FROM products WHERE isPublished = 1",
     );
+    return (rows as ProductRecord[]).map((row) => ({
+      ...row,
+      isPublished: Boolean(row.isPublished),
+    }));
+  }
+
+  static async fetchPublishedById(
+    id: unknown,
+  ): Promise<ProductRecord | undefined> {
+    const parsedId = Product.parseId(id);
+    if (parsedId === null) {
+      return undefined;
+    }
+    const [rows] = await db.execute(
+      "SELECT * FROM products WHERE id = ? AND isPublished = 1",
+      [parsedId],
+    );
+    return (rows as ProductRecord[])[0];
   }
 }
 
