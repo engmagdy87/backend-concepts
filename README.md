@@ -1,6 +1,6 @@
 # backend-concepts
 
-Express and TypeScript backend learning project. Products are stored in a JSON file and served through admin (full catalog) and shop (published only) routes.
+Express and TypeScript backend learning project. Products live in MySQL (admin = full catalog, shop = published only). The cart is still a JSON file.
 
 - [Changelog](CHANGELOG.md) — shipped API and product changes
 - [Learning log](LEARNING.md) — backend concepts practiced here
@@ -49,7 +49,7 @@ Create body:
 }
 ```
 
-The server assigns a positive integer `id` (`max(existing id) + 1`). Delete accepts `id` as a number or numeric string.
+MySQL assigns the `id` (`AUTO_INCREMENT` / `insertId`). Delete accepts `id` as a number or numeric string.
 
 Update body (same fields as create; `id` is in the URL):
 
@@ -110,8 +110,7 @@ controllers/                # HTTP handlers (status codes + JSON)
 services/                   # Use-case glue (cart ↔ product)
 models/                     # Product / Cart domain + persistence
 types/                      # Shared input / record types
-utils/                      # JSON file helpers
-data/products.json          # File-backed product store
+utils/                      # Pool, cart JSON helpers, number helpers
 data/cart.json              # File-backed cart store
 ```
 
@@ -131,5 +130,5 @@ flowchart LR
   CartSvc --> CartModel["cart.model.ts"]
 ```
 
-A request hits `app.ts`, which parses the body and mounts `/admin`, `/shop`, or `/cart`. Product admin/shop handlers use the product controller and model. Cart handlers use a service that checks published products, then updates the cart file.
+A request hits `app.ts`, which parses the body and mounts `/admin`, `/shop`, or `/cart`. Product admin/shop handlers use the product controller and MySQL-backed model. Cart handlers use a service that checks published products in MySQL, then updates `data/cart.json`.
 

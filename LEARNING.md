@@ -4,6 +4,12 @@ Notes on backend concepts practiced in this repo. Newest entries first.
 
 Update this file when a feature teaches a concept worth keeping. Skip chores, formatting-only changes, and WIP commits.
 
+## 2026-08-25 — Products leave the JSON file
+
+- Catalog, shop, get-by-id, update, and delete all hit MySQL. `data/products.json` is gone. Cart still uses `data/cart.json`.
+- When a model method becomes `async`, every caller must `await` (cart add did not, so it always looked like “not found”).
+- `DELETE` can use `affectedRows > 0` for 404. `UPDATE` cannot — unchanged values also report 0.
+
 ## 2026-08-25 — PUT for a simple full replace
 
 - Update is `PUT /admin/products/:id`: id in the URL, body is the full product (same fields as create).

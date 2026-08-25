@@ -8,6 +8,13 @@ Canonical copy also lives at `~/.cursor/skills/backend-learning-reference/BACKEN
 
 ## Inbox
 
+### 2026-08-25 — Products are MySQL; cart is still a file
+
+- Product catalog no longer has a JSON store. `save` / `update` / `delete` / all fetches use the pool. `data/products.json` and `product.utils.ts` are gone.
+- Cart still reads/writes `data/cart.json`. Add-to-cart asks MySQL `fetchPublishedById`, then mutates the cart file.
+- When a fetch becomes `async`, callers must `await`. Forgetting it (cart controller) treats a Promise as a missing product.
+- `DELETE ... affectedRows > 0` is a valid 404 check. `UPDATE` is not — unchanged values also report 0.
+
 ### 2026-08-25 — PUT when the client already has the full resource
 
 - Update is `PUT /admin/products/:id`. Body is full `ProductInput`; one fixed `SET` of every column. Simpler than PATCH’s dynamic `SET`.
@@ -328,7 +335,8 @@ Ideas not implemented, or “next when ready”:
 - [ ] Align create route with REST (`POST /admin/products`) if you want textbook REST
 - [ ] README layout must stay in sync when folders/files change (easy to forget)
 - [ ] Ping MySQL at boot (`SELECT 1`) before `app.listen`
-- [ ] Swap JSON persistence for SQL one model at a time
+- [x] Product model on MySQL (`data/products.json` removed)
+- [ ] Cart still JSON (`data/cart.json`) — migrate later
 
 ---
 
@@ -353,11 +361,15 @@ This project only: when an endpoint is added, changed, or removed, update `postm
 app.ts
 routes/admin.route.ts
 routes/shop.route.ts
+routes/cart.route.ts
 controllers/products.controller.ts
+controllers/cart.controller.ts
+services/cart.service.ts
 models/product.model.ts
+models/cart.model.ts
 types/product.types.ts
-utils/product.utils.ts
-data/products.json
+utils/database.utils.ts
+data/cart.json
 ```
 
 Shop: `Product.fetchPublished` / `fetchPublishedById`  

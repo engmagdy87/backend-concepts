@@ -12,13 +12,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `POST /admin/delete-product` to delete a product by `id`
 
 ### Fixed
-- `GET /admin/products` returns `isPublished` as `true`/`false` (MySQL stores `TINYINT` 0/1)
+- `GET /admin/products` and get-by-id return `isPublished` as `true`/`false` (MySQL stores `TINYINT` 0/1)
+- `POST /cart/items` awaits the product lookup (add-to-cart was treating the Promise as a missing product)
+- `POST /admin/delete-product` returns `404` when no MySQL row matches
 
 ### Changed
+- Product persistence is MySQL only (`data/products.json` and `product.utils.ts` removed). Cart remains `data/cart.json`.
 - Replaced `POST /admin/update-product` with `PUT /admin/products/:id` (full body; id in the URL)
 - `POST /cart/items` adds one unit (`productId` only); stored line quantity is not a request field. `DELETE /cart/items` decrements by one
 - Split product handling into `types/`, `models/`, `utils/`, and thin controllers; routes renamed to `*.route.ts`
-- Product ids are positive integers: created with `max(id) + 1`, parsed via `Product.parseId` (number or numeric string), written with `id` first in `products.json`
+- Product ids are positive integers (`Product.parseId`); new rows use MySQL `insertId`
 - Renamed admin update API from `edit-product` / `editProduct` to `update-product` / `updateProduct`
 
 ## [0.1.0] - 2026-08-24

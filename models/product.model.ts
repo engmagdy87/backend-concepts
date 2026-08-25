@@ -14,6 +14,10 @@ function toProductRecord(id: number, productData: ProductInput): ProductRecord {
   };
 }
 
+function mapProductRow(row: ProductRecord): ProductRecord {
+  return { ...row, isPublished: Boolean(row.isPublished) };
+}
+
 class Product {
   title: string;
   price: number;
@@ -76,24 +80,20 @@ class Product {
       id,
     ]);
     const row = (rows as ProductRecord[])[0];
-    if (!row) {
-      return undefined;
-    }
-
-    return { ...row, isPublished: Boolean(row.isPublished) };
+    return row ? mapProductRow(row) : undefined;
   }
 
   static async delete(id: number): Promise<boolean> {
-    await db.execute("DELETE FROM products WHERE id = ?", [id]);
-    return true;
+    const [result] = await db.execute<ResultSetHeader>(
+      "DELETE FROM products WHERE id = ?",
+      [id],
+    );
+    return result.affectedRows > 0;
   }
 
   static async fetchProducts(): Promise<ProductRecord[]> {
     const [rows] = await db.execute("SELECT * FROM products");
-    return (rows as ProductRecord[]).map((row) => ({
-      ...row,
-      isPublished: Boolean(row.isPublished),
-    }));
+    return (rows as ProductRecord[]).map(mapProductRow);
   }
 
   static async fetchProductById(
@@ -106,17 +106,15 @@ class Product {
     const [rows] = await db.execute("SELECT * FROM products WHERE id = ?", [
       parsedId,
     ]);
-    return (rows as ProductRecord[])[0];
+    const row = (rows as ProductRecord[])[0];
+    return row ? mapProductRow(row) : undefined;
   }
 
   static async fetchPublished(): Promise<ProductRecord[]> {
     const [rows] = await db.execute(
       "SELECT * FROM products WHERE isPublished = 1",
     );
-    return (rows as ProductRecord[]).map((row) => ({
-      ...row,
-      isPublished: Boolean(row.isPublished),
-    }));
+    return (rows as ProductRecord[]).map(mapProductRow);
   }
 
   static async fetchPublishedById(
@@ -130,7 +128,8 @@ class Product {
       "SELECT * FROM products WHERE id = ? AND isPublished = 1",
       [parsedId],
     );
-    return (rows as ProductRecord[])[0];
+    const row = (rows as ProductRecord[])[0];
+    return row ? mapProductRow(row) : undefined;
   }
 }
 

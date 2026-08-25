@@ -11,11 +11,11 @@ export const getCart = (_req: Request, res: Response) => {
   res.json({ data: getCartService() });
 };
 
-export const addToCart = (
+export const addToCart = async (
   req: Request<unknown, unknown, AddToCartBody>,
   res: Response,
 ) => {
-  const result = addToCartService(req.body.productId);
+  const result = await addToCartService(req.body.productId);
 
   if (!result.ok) {
     return res.status(404).json({
