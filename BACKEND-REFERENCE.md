@@ -8,6 +8,16 @@ Canonical copy also lives at `~/.cursor/skills/backend-learning-reference/BACKEN
 
 ## Inbox
 
+### 2026-08-29 — Architect review: assumptions then lenses
+
+- State constraints and assumptions first (one process, no auth, which store each entity uses). Then only the lenses that apply: ownership, coupling, API, failures, smells, reversible next step.
+- YAGNI: do not run an enterprise checklist (microservices, CQRS, service mesh) on a learning monolith. An ADR in this project is a `BACKEND-REFERENCE.md` bullet.
+
+### 2026-08-29 — Architect mentor: options then now
+
+- For a topic: briefly all real options, best practice, why this repo now, when to switch, what is advanced. Do not lock to one library.
+- Do not implement unless explicitly asked. Teach as do / don't + why.
+
 ### 2026-08-25 — SQL: find then increment or insert
 
 - In a file, `find` then mutate qty or `push`. In SQL that is `SELECT` by `productId`, then `UPDATE quantity + 1` or `INSERT`.
