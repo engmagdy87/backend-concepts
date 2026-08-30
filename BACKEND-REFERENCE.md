@@ -8,6 +8,12 @@ Canonical copy also lives at `~/.cursor/skills/backend-learning-reference/BACKEN
 
 ## Inbox
 
+### 2026-08-30 — ORM still needs the driver
+
+- TypeORM is not a replacement for `mysql2`. It sits on top of a driver. `type: "mysql"` loads `mysql2` inside TypeORM; you do not `import "mysql2"` in models.
+- Keep `mysql2` in `package.json`. TypeORM lists it as an **optional peer** (Postgres would be `pg`, SQLite `better-sqlite3`). Dropping it because the app no longer calls `db.execute` breaks `DataSource.initialize()`.
+- Application SQL (`db.execute`) can go once every path uses the repository. The driver package stays until you change database or ORM.
+
 ### 2026-08-30 — Same sentinel on both sides of the call
 
 - If the service returns `undefined` for invalid input, the controller must test `undefined` (`=== null` never matches). Pick one sentinel and use it at both ends.
