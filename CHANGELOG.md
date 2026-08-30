@@ -12,6 +12,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `POST /admin/delete-product` to delete a product by `id`
 
 ### Fixed
+- `DELETE /cart/items` returns `400` when `productId` is not a positive integer (controller compared `null` to the service’s `undefined`)
 - TypeORM start under `tsx`: `@Column({ type })` so column types are not guessed (`Product#title` crash)
 - `GET /admin/products` and get-by-id return `isPublished` as `true`/`false` (MySQL stores `TINYINT` 0/1)
 - `POST /cart/items` awaits the product lookup (add-to-cart was treating the Promise as a missing product)

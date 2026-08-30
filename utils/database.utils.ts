@@ -1,5 +1,5 @@
 import { DataSource } from "typeorm";
-import ProductEntity from "../models/product.model";
+import Product from "../models/product.model";
 import Cart from "../models/cart.model";
 
 export const AppDataSource = new DataSource({
@@ -9,7 +9,7 @@ export const AppDataSource = new DataSource({
   username: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
-  entities: [ProductEntity, Cart],
+  entities: [Product, Cart],
   synchronize: false,
   logging: true,
 });

@@ -4,6 +4,10 @@ Notes on backend concepts practiced in this repo. Newest entries first.
 
 Update this file when a feature teaches a concept worth keeping. Skip chores, formatting-only changes, and WIP commits.
 
+## 2026-08-30 — Match the sentinel the service actually returns
+
+- `removeFromCartService` returns `undefined` for a bad `productId`. `cart === null` never runs. Check `undefined` (or return `null` from both sides).
+
 ## 2026-08-30 — `tsx` cannot guess `@Column()` types
 
 - Empty `@Column()` needs decorator metadata. `tsx` does not emit it. Spell the SQL type (`varchar`, `double`, `text`, `boolean`, `int`).

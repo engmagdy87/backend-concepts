@@ -8,6 +8,11 @@ Canonical copy also lives at `~/.cursor/skills/backend-learning-reference/BACKEN
 
 ## Inbox
 
+### 2026-08-30 — Same sentinel on both sides of the call
+
+- If the service returns `undefined` for invalid input, the controller must test `undefined` (`=== null` never matches). Pick one sentinel and use it at both ends.
+- Import the class as itself (`Product`, not `ProductEntity`) when there is only one class. An alias implies a second type that does not exist.
+
 ### 2026-08-30 — TypeORM columns: say the SQL type under `tsx`
 
 - `@Column()` with no `type` needs `emitDecoratorMetadata` + `reflect-metadata` *and* a compiler that emits `design:type`. `tsc` does; **`tsx` (esbuild) does not.**

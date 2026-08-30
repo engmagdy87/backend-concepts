@@ -35,7 +35,7 @@ export const removeFromCart = async (
 ) => {
   const cart = await removeFromCartService(req.body.productId);
 
-  if (cart === null) {
+  if (cart === undefined) {
     return res.status(400).json({
       message: "productId must be a positive integer",
     });
