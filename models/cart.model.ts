@@ -10,10 +10,10 @@ class Cart {
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @Column()
+  @Column({ type: "int" })
   productId!: number;
 
-  @Column()
+  @Column({ type: "int" })
   quantity!: number;
 
   static async addToCart(productId: number) {

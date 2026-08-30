@@ -12,19 +12,19 @@ class Product {
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @Column()
+  @Column({ type: "varchar", length: 255 })
   title!: string;
 
-  @Column()
+  @Column({ type: "double" })
   price!: number;
 
-  @Column()
+  @Column({ type: "text" })
   description!: string;
 
-  @Column()
+  @Column({ type: "varchar", length: 255 })
   imageUrl!: string;
 
-  @Column()
+  @Column({ type: "boolean" })
   isPublished!: boolean;
 
   constructor(productData?: ProductInput) {

@@ -4,6 +4,11 @@ Notes on backend concepts practiced in this repo. Newest entries first.
 
 Update this file when a feature teaches a concept worth keeping. Skip chores, formatting-only changes, and WIP commits.
 
+## 2026-08-30 — `tsx` cannot guess `@Column()` types
+
+- Empty `@Column()` needs decorator metadata. `tsx` does not emit it. Spell the SQL type (`varchar`, `double`, `text`, `boolean`, `int`).
+- `import "reflect-metadata"` in `app.ts` is still required; it does not replace explicit types.
+
 ## 2026-08-30 — Return the entity unless you must hide fields
 
 - `getCart` returns `repository.find()`. Do not `.map` to drop `id` when every other column is already public.

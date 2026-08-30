@@ -8,6 +8,14 @@ Canonical copy also lives at `~/.cursor/skills/backend-learning-reference/BACKEN
 
 ## Inbox
 
+### 2026-08-30 — TypeORM columns: say the SQL type under `tsx`
+
+- `@Column()` with no `type` needs `emitDecoratorMetadata` + `reflect-metadata` *and* a compiler that emits `design:type`. `tsc` does; **`tsx` (esbuild) does not.**
+- This repo starts with `tsx app.ts`. Use `@Column({ type: "varchar" })` (etc.) so TypeORM does not guess. `reflect-metadata` in `app.ts` is still required; it is not enough by itself.
+- That crash happens when the **class loads**, before MySQL. An empty database does not let you skip `type`. `synchronize: true` *creates* tables from entity metadata — it still needs those types first. `synchronize: false` here because the tables already exist; don’t let TypeORM reshape them.
+- `isPublished!: boolean` is a **TypeScript** type. It is erased at runtime. `@Column()` does not read it unless the compiler emits `design:type` (`tsc`). `!` only means “I will assign this later.” Under `tsx`, `@Column({ type: "boolean" })` is the indicator.
+- `logging: true` on `DataSource` prints SQL (`query: SELECT ...`) to the terminal. Fine while learning. Turn off or use `["error"]` when the noise hurts.
+
 ### 2026-08-30 — Class singular, table plural
 
 - Class `Product` = one row. Table `products` = the set. `@Entity({ name })` must match the real table, not the class name.
@@ -309,7 +317,7 @@ PATCH /admin/products/1
 
 ### Types vs runtime validation
 
-TypeScript `ProductInput` is **compile-time**. `req.body` is still untrusted at runtime.
+TypeScript `ProductInput` is **compile-time**. `req.body` is still untrusted at runtime. Same for entity fields: `isPublished!: boolean` is gone after compile; TypeORM `@Column()` only sees it if `tsc` emitted decorator metadata. `tsx` does not, so `@Column({ type: "boolean" })` is the runtime type.
 
 Validate on the **model** (`Product.validateInput`), return **400** from the **controller** when invalid.
 
