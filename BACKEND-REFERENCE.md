@@ -8,6 +8,13 @@ Canonical copy also lives at `~/.cursor/skills/backend-learning-reference/BACKEN
 
 ## Inbox
 
+### 2026-08-31 — SemVer versions the public API, not the ORM
+
+- GitHub Releases commonly use `v1.0.0` / `v1.1.0` (SemVer) when others depend on the **HTTP contract**. MAJOR = breaking routes/bodies; MINOR = additive; PATCH = fix.
+- This repo’s `chapter-json` / `chapter-typeorm` tags are **curriculum bookmarks**, not product versions. JSON → mysql2 → TypeORM is the same shop with a new store — not `v1.1.0` of the file era.
+- `CHANGELOG.md` `[0.1.0]` is Keep a Changelog for the first JSON API. Leave it; do not relabel chapters as 1.0 / 1.1. Switch to `v*` on git when you treat `main` as a stable API others pin to.
+- The agent **decides** at commit time: new `chapter-*` tag + GitHub Release only when a persistence/architecture **era** finishes (next: Prisma). Skip follow-up fixes in the same era; say so in the reply if skipped.
+
 ### 2026-08-30 — ORM still needs the driver
 
 - TypeORM is not a replacement for `mysql2`. It sits on top of a driver. `type: "mysql"` loads `mysql2` inside TypeORM; you do not `import "mysql2"` in models.

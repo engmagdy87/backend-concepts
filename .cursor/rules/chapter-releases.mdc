@@ -1,0 +1,31 @@
+---
+description: Decide when a finished chapter gets a git tag and GitHub Release on that commit
+alwaysApply: true
+---
+
+# Chapter tags and Releases
+
+The agent **decides** whether the current work is a new learning chapter. Do not wait for the user to ask. Do not tag every commit.
+
+Existing chapters: `chapter-json` → `chapter-mysql-products` → `chapter-mysql2` → `chapter-typeorm`. Next expected era: Prisma → `chapter-prisma`.
+
+## When to tag (yes)
+
+A **new persistence or architecture era** you would later check out as a snapshot. Same turn as the finishing commit (or immediately after it succeeds).
+
+Examples: JSON files → mysql2; mysql2 → TypeORM; TypeORM → Prisma; later Nest/auth as a whole era, not a small endpoint.
+
+## When not to tag
+
+Bugfix, docs, rename, WIP, formatting, same-chapter follow-up (`tsx` `@Column` types stayed in `chapter-typeorm`). HTTP tweaks inside the current store. SemVer `v1.0.0` only if the user starts versioning the public API.
+
+If it is not clearly a new era, **skip the tag**. Say so in the reply so they can override.
+
+## How
+
+1. Annotated tag `chapter-<short-name>` on that commit (not `v*`).
+2. `git push origin refs/tags/<tag>`.
+3. `gh release create` with a short title + notes + `git checkout <tag>`.
+4. Reply with the Release URL.
+
+Do not retag old chapters or move `chapter-typeorm`.
