@@ -1,57 +1,50 @@
-import { CartItem } from "../types/cart.types";
-import db from "../utils/database.utils";
+import { Entity, PrimaryGeneratedColumn, Column } from "typeorm";
+import { AppDataSource } from "../utils/database.utils";
 
+function cartRepository() {
+  return AppDataSource.getRepository(Cart);
+}
+
+@Entity({ name: "cart_items" })
 class Cart {
-  static async addToCart(productId: number) {
-    const [rows] = await db.execute(
-      "SELECT * FROM cart_items WHERE productId = ?",
-      [productId],
-    );
-    const existingItem = (rows as CartItem[])[0];
+  @PrimaryGeneratedColumn()
+  id!: number;
 
-    if (existingItem) {
-      await db.execute(
-        "UPDATE cart_items SET quantity = quantity + 1 WHERE productId = ?",
-        [productId],
-      );
+  @Column()
+  productId!: number;
+
+  @Column()
+  quantity!: number;
+
+  static async addToCart(productId: number) {
+    const cart = await cartRepository().findOneBy({ productId });
+
+    if (cart) {
+      await cartRepository().update(cart.id, { quantity: cart.quantity + 1 });
     } else {
-      await db.execute(
-        "INSERT INTO cart_items (productId, quantity) VALUES (?, ?)",
-        [productId, 1],
-      );
+      await cartRepository().save({ productId, quantity: 1 });
     }
   }
 
   static async removeFromCart(productId: number) {
-    const [rows] = await db.execute(
-      "SELECT * FROM cart_items WHERE productId = ?",
-      [productId],
-    );
-    const existingItem = (rows as CartItem[])[0];
-
-    if (!existingItem) {
+    const cart = await cartRepository().findOneBy({ productId });
+    if (!cart) {
       return;
     }
 
-    if (existingItem.quantity === 1) {
-      await db.execute("DELETE FROM cart_items WHERE productId = ?", [
-        productId,
-      ]);
+    if (cart.quantity === 1) {
+      await cartRepository().remove(cart);
     } else {
-      await db.execute(
-        "UPDATE cart_items SET quantity = quantity - 1 WHERE productId = ?",
-        [productId],
-      );
+      await cartRepository().update(cart.id, { quantity: cart.quantity - 1 });
     }
   }
 
   static async clearCart() {
-    await db.execute("DELETE FROM cart_items");
+    await cartRepository().clear();
   }
 
-  static async getCart() {
-    const [rows] = await db.execute("SELECT * FROM cart_items");
-    return rows as CartItem[];
+  static async getCart(): Promise<Cart[]> {
+    return cartRepository().find();
   }
 }
 

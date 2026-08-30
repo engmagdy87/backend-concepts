@@ -1,31 +1,34 @@
-import type { ResultSetHeader } from "mysql2";
-import db from "../utils/database.utils";
-import type { ProductInput, ProductRecord } from "../types/product.types";
+import { Entity, PrimaryGeneratedColumn, Column } from "typeorm";
+import AppDataSource from "../utils/database.utils";
+import type { ProductInput } from "../types/product.types";
 import { isPositiveInteger } from "../utils/number.utils";
 
-function toProductRecord(id: number, productData: ProductInput): ProductRecord {
-  return {
-    id,
-    title: productData.title,
-    price: productData.price,
-    description: productData.description,
-    imageUrl: productData.imageUrl,
-    isPublished: productData.isPublished,
-  };
+function productRepository() {
+  return AppDataSource.getRepository(Product);
 }
 
-function mapProductRow(row: ProductRecord): ProductRecord {
-  return { ...row, isPublished: Boolean(row.isPublished) };
-}
-
+@Entity({ name: "products" })
 class Product {
-  title: string;
-  price: number;
-  description: string;
-  imageUrl: string;
-  isPublished: boolean;
+  @PrimaryGeneratedColumn()
+  id!: number;
 
-  constructor(productData: ProductInput) {
+  @Column()
+  title!: string;
+
+  @Column()
+  price!: number;
+
+  @Column()
+  description!: string;
+
+  @Column()
+  imageUrl!: string;
+
+  @Column()
+  isPublished!: boolean;
+
+  constructor(productData?: ProductInput) {
+    if (!productData) return;
     this.title = productData.title;
     this.price = productData.price;
     this.description = productData.description;
@@ -33,19 +36,8 @@ class Product {
     this.isPublished = productData.isPublished;
   }
 
-  async save(): Promise<ProductRecord> {
-    const [result] = await db.execute<ResultSetHeader>(
-      "INSERT INTO products (title, price, description, imageUrl, isPublished) VALUES (?, ?, ?, ?, ?)",
-      [
-        this.title,
-        this.price,
-        this.description,
-        this.imageUrl,
-        this.isPublished,
-      ],
-    );
-
-    return toProductRecord(result.insertId, this);
+  async save(): Promise<Product> {
+    return productRepository().save(this);
   }
 
   /** Accepts a number or numeric string (e.g. URL param `"3"`). */
@@ -63,73 +55,57 @@ class Product {
   static async update(
     id: number,
     productData: ProductInput,
-  ): Promise<ProductRecord | undefined> {
-    await db.execute(
-      "UPDATE products SET title = ?, price = ?, description = ?, imageUrl = ?, isPublished = ? WHERE id = ?",
-      [
-        productData.title,
-        productData.price,
-        productData.description,
-        productData.imageUrl,
-        productData.isPublished,
-        id,
-      ],
-    );
+  ): Promise<Product | undefined> {
+    const product = await productRepository().findOneBy({ id });
+    if (!product) {
+      return undefined;
+    }
 
-    const [rows] = await db.execute("SELECT * FROM products WHERE id = ?", [
-      id,
-    ]);
-    const row = (rows as ProductRecord[])[0];
-    return row ? mapProductRow(row) : undefined;
+    product.title = productData.title;
+    product.price = productData.price;
+    product.description = productData.description;
+    product.imageUrl = productData.imageUrl;
+    product.isPublished = productData.isPublished;
+
+    return productRepository().save(product);
   }
 
   static async delete(id: number): Promise<boolean> {
-    const [result] = await db.execute<ResultSetHeader>(
-      "DELETE FROM products WHERE id = ?",
-      [id],
-    );
-    return result.affectedRows > 0;
+    const product = await productRepository().findOneBy({ id });
+    if (!product) {
+      return false;
+    }
+    await productRepository().remove(product);
+    return true;
   }
 
-  static async fetchProducts(): Promise<ProductRecord[]> {
-    const [rows] = await db.execute("SELECT * FROM products");
-    return (rows as ProductRecord[]).map(mapProductRow);
+  static async fetchProducts(): Promise<Product[]> {
+    return productRepository().find();
   }
 
-  static async fetchProductById(
-    id: unknown,
-  ): Promise<ProductRecord | undefined> {
+  static async fetchProductById(id: unknown): Promise<Product | undefined> {
     const parsedId = Product.parseId(id);
     if (parsedId === null) {
       return undefined;
     }
-    const [rows] = await db.execute("SELECT * FROM products WHERE id = ?", [
-      parsedId,
-    ]);
-    const row = (rows as ProductRecord[])[0];
-    return row ? mapProductRow(row) : undefined;
+    return (await productRepository().findOneBy({ id: parsedId })) ?? undefined;
   }
 
-  static async fetchPublished(): Promise<ProductRecord[]> {
-    const [rows] = await db.execute(
-      "SELECT * FROM products WHERE isPublished = 1",
-    );
-    return (rows as ProductRecord[]).map(mapProductRow);
+  static async fetchPublished(): Promise<Product[]> {
+    return productRepository().find({ where: { isPublished: true } });
   }
 
-  static async fetchPublishedById(
-    id: unknown,
-  ): Promise<ProductRecord | undefined> {
+  static async fetchPublishedById(id: unknown): Promise<Product | undefined> {
     const parsedId = Product.parseId(id);
     if (parsedId === null) {
       return undefined;
     }
-    const [rows] = await db.execute(
-      "SELECT * FROM products WHERE id = ? AND isPublished = 1",
-      [parsedId],
+    return (
+      (await productRepository().findOneBy({
+        id: parsedId,
+        isPublished: true,
+      })) ?? undefined
     );
-    const row = (rows as ProductRecord[])[0];
-    return row ? mapProductRow(row) : undefined;
   }
 }
 

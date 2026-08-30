@@ -8,6 +8,36 @@ Canonical copy also lives at `~/.cursor/skills/backend-learning-reference/BACKEN
 
 ## Inbox
 
+### 2026-08-30 — Class singular, table plural
+
+- Class `Product` = one row. Table `products` = the set. `@Entity({ name })` must match the real table, not the class name.
+- TypeORM’s **entity** is the class. The decorator’s `name` is the **table**. Don’t say “entity name” for `products` — that’s the table name.
+- This repo already has `products` and `cart_items`. Do not rename to `product` for taste.
+
+### 2026-08-30 — Don’t map the entity 1:1
+
+- `getCart` can `return repository.find()`. A `.map` that copies every column except `id` is a fake DTO — the PK is useful on the wire.
+- Project (map/pick) only when the API must hide fields. Until then the entity *is* the row.
+
+### 2026-08-30 — TypeORM `clear()` vs `delete`
+
+- `repository.clear()` is built-in. It **TRUNCATE**s the table (empty `cart_items`). Fine for “clear the cart.”
+- `repository.delete({})` is **DELETE FROM** (row deletes; autoincrement usually stays). Use when you need a normal DML delete (transactions, FKs).
+- Same table outcome, different input: `remove(entity)` needs the loaded row (`remove(cart)` after `findOneBy`). `delete(criteria)` is a query (`delete({ productId })`) — no entity required, no cascades/listeners.
+- Pair with `save`/`remove` (work on instances) vs `insert`/`update`/`delete` (work on criteria). `Product.delete` in this repo is *our* wrapper; inside it calls TypeORM `remove`.
+
+### 2026-08-30 — One write path when moving to TypeORM
+
+- After a method uses `repository.update` / `save`, delete the leftover `db.execute` in the same branch. Two writes = two increments (add-to-cart +1 twice).
+- One table name for the entity (`@Entity({ name })` must match the real table). Do not query `cart_items` while the entity is mapped to `cart`.
+- Register the entity on `DataSource.entities` and map columns (`id`, `productId`, `quantity`) or `findOneBy` / `update` have nothing to map. `Property 'quantity' does not exist on type 'Cart'` is TypeScript saying the same thing: `@Entity` without `@Column` fields is an empty class.
+
+### 2026-08-30 — TypeORM: one class, don’t collide with BaseEntity
+
+- Map the table on the same model (`@Entity` on `Product`). Do not keep a `ProductEntity` plus a mysql2 `Product`.
+- `save()` is TypeORM’s insert: it fills `id`. Drop `toProductRecord(insertId, this)`.
+- Do not `extends BaseEntity` if you still want `Product.update` / `Product.delete` with your own signatures — TypeORM already owns those static names. Use `getRepository(Product)` instead.
+
 ### 2026-08-29 — Architect review: assumptions then lenses
 
 - State constraints and assumptions first (one process, no auth, which store each entity uses). Then only the lenses that apply: ownership, coupling, API, failures, smells, reversible next step.
@@ -220,6 +250,7 @@ shop.route.ts
 ```
 
 - Entity files **singular**; controller **plural** is a common, intentional mix. Stick to it.
+- SQL tables here are **plural / collective** (`products`, `cart_items`). The class stays singular (`Product`, `Cart`). `@Entity({ name })` is the table name, not a style vote — it must match MySQL.
 - Other valid styles exist (`Product.ts` in `models/`, kebab-case). Pick one per repo.
 
 ### REST paths

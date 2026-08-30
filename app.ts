@@ -1,6 +1,8 @@
 import "dotenv/config";
+import "reflect-metadata";
 import express, { NextFunction, Request, Response } from "express";
 import bodyParser from "body-parser";
+import AppDataSource from "./utils/database.utils";
 
 import adminRoutes from "./routes/admin.route";
 import shopRoutes from "./routes/shop.route";
@@ -26,6 +28,13 @@ app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
   res.status(500).json({ message: "Internal server error" });
 });
 
-app.listen(3040);
+async function start() {
+  await AppDataSource.initialize();
+  app.listen(3040);
+  console.log("Server is running on port 3040");
+}
 
-console.log("Server is running on port 3040");
+start().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});

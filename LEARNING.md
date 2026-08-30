@@ -4,6 +4,15 @@ Notes on backend concepts practiced in this repo. Newest entries first.
 
 Update this file when a feature teaches a concept worth keeping. Skip chores, formatting-only changes, and WIP commits.
 
+## 2026-08-30 — Return the entity unless you must hide fields
+
+- `getCart` returns `repository.find()`. Do not `.map` to drop `id` when every other column is already public.
+
+## 2026-08-30 — TypeORM entity needs columns on the class
+
+- `@Entity` alone is an empty TypeScript class. `cart.quantity` fails until you declare `@Column()` fields like Product (`id`, `productId`, `quantity`).
+- Map `@Entity({ name })` to the real table (`cart_items`). Register the class on `DataSource.entities`.
+
 ## 2026-08-25 — Cart add: SELECT then UPDATE or INSERT
 
 - File logic (`find` → quantity++ / `push`) becomes SQL: `SELECT` by `productId`, then `UPDATE quantity = quantity + 1` or `INSERT` with quantity 1.
