@@ -1,0 +1,12 @@
+---
+description: Read HANDOFF.md at the start of a session when it exists
+alwaysApply: true
+---
+
+# Session handoff
+
+If `HANDOFF.md` exists at the repo root, **read it before other work** on the first turn of a new chat (or when the user says continue / pick up / handoff).
+
+Treat it as the current position: Goal, Done, In progress, Decisions, Constraints, Next.
+
+Do not invent progress that is not in that file. If `HANDOFF.md` is missing, skip this — do not create one unless asked.
