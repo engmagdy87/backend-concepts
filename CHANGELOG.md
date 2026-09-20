@@ -19,6 +19,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `POST /admin/delete-product` returns `404` when no MySQL row matches
 
 ### Changed
+- Cart is a header (`carts`) plus items (`cart_items` with `cartId`). `GET /cart` loads each item’s `product`. Same `/cart` routes.
 - `GET /cart` (and add/remove/clear responses) include the cart line `id`
 - Cart persistence is TypeORM on `cart_items` (find then increment or insert; remove/clear/get use the same repository). Leftover mysql2 `db.execute` removed.
 - Product persistence is MySQL only (`data/products.json` and `product.utils.ts` removed).
@@ -27,6 +28,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Split product handling into `types/`, `models/`, `utils/`, and thin controllers; routes renamed to `*.route.ts`
 - Product ids are positive integers (`Product.parseId`); new rows use MySQL `insertId`
 - Renamed admin update API from `edit-product` / `editProduct` to `update-product` / `updateProduct`
+
+### Removed
+- Leftover `data/cart.json` (cart is MySQL `carts` + `cart_items`)
 
 ## [0.1.0] - 2026-08-24
 

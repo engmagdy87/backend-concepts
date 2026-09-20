@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "backend-concepts",
-    "description": "Local Express learning API: admin products, shop (published), and cart.",
+    "description": "Local Express learning API: admin products, shop (published), and cart.\n\nCart is one guest basket (`carts`) plus `cart_items`. GET/POST/DELETE `/cart` return items with `cartId`, `productId`, `quantity`, and a nested `product`. Add/remove body is still `{ productId }` (published products only).",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -11,7 +11,7 @@
     },
     {
       "key": "productId",
-      "value": "2"
+      "value": "6"
     }
   ],
   "item": [
@@ -110,12 +110,14 @@
     },
     {
       "name": "Cart",
+      "description": "One guest cart. Responses are the item list. Each item includes `cartId`, `productId`, `quantity`, and a nested `product`.",
       "item": [
         {
           "name": "Get cart",
           "request": {
             "method": "GET",
             "header": [],
+            "description": "List items in the guest cart. `data` is `[{ id, cartId, productId, quantity, product }]`.",
             "url": "{{baseUrl}}/cart"
           }
         },
@@ -131,8 +133,9 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"productId\": 2\n}"
+              "raw": "{\n  \"productId\": {{productId}}\n}"
             },
+            "description": "Add one unit of a published product. Repeat to increment quantity. 404 if missing or unpublished. Returns the full item list.",
             "url": "{{baseUrl}}/cart/items"
           }
         },
@@ -148,8 +151,9 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"productId\": 2\n}"
+              "raw": "{\n  \"productId\": {{productId}}\n}"
             },
+            "description": "Subtract one unit. Drops the line at 0. 400 if productId is not a positive integer.",
             "url": "{{baseUrl}}/cart/items"
           }
         },
@@ -158,6 +162,7 @@
           "request": {
             "method": "DELETE",
             "header": [],
+            "description": "Empty the guest cart (deletes its items; the cart row stays).",
             "url": "{{baseUrl}}/cart"
           }
         }

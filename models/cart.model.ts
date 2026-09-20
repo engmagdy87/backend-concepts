@@ -1,50 +1,25 @@
-import { Entity, PrimaryGeneratedColumn, Column } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, OneToMany } from "typeorm";
 import { AppDataSource } from "../utils/database.utils";
+import CartItem from "./cart-item.model";
 
 function cartRepository() {
   return AppDataSource.getRepository(Cart);
 }
 
-@Entity({ name: "cart_items" })
+@Entity({ name: "carts" })
 class Cart {
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @Column({ type: "int" })
-  productId!: number;
+  @OneToMany(() => CartItem, (item) => item.cart)
+  items!: CartItem[];
 
-  @Column({ type: "int" })
-  quantity!: number;
-
-  static async addToCart(productId: number) {
-    const cart = await cartRepository().findOneBy({ productId });
-
-    if (cart) {
-      await cartRepository().update(cart.id, { quantity: cart.quantity + 1 });
-    } else {
-      await cartRepository().save({ productId, quantity: 1 });
+  static async getOrCreateGuest(): Promise<Cart> {
+    const existing = await cartRepository().find({ take: 1 });
+    if (existing[0]) {
+      return existing[0];
     }
-  }
-
-  static async removeFromCart(productId: number) {
-    const cart = await cartRepository().findOneBy({ productId });
-    if (!cart) {
-      return;
-    }
-
-    if (cart.quantity === 1) {
-      await cartRepository().remove(cart);
-    } else {
-      await cartRepository().update(cart.id, { quantity: cart.quantity - 1 });
-    }
-  }
-
-  static async clearCart() {
-    await cartRepository().clear();
-  }
-
-  static async getCart(): Promise<Cart[]> {
-    return cartRepository().find();
+    return cartRepository().save(new Cart());
   }
 }
 

@@ -1,7 +1,8 @@
-import { Entity, PrimaryGeneratedColumn, Column } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from "typeorm";
 import AppDataSource from "../utils/database.utils";
 import type { ProductInput } from "../types/product.types";
 import { isPositiveInteger } from "../utils/number.utils";
+import CartItem from "./cart-item.model";
 
 function productRepository() {
   return AppDataSource.getRepository(Product);
@@ -26,6 +27,9 @@ class Product {
 
   @Column({ type: "boolean" })
   isPublished!: boolean;
+
+  @OneToMany(() => CartItem, (item) => item.product)
+  cartItems!: CartItem[];
 
   constructor(productData?: ProductInput) {
     if (!productData) return;

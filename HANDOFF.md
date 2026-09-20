@@ -2,62 +2,65 @@
 
 ## Goal
 
-Keep this learning shop as one GitHub history with checkoutable **chapter** snapshots (JSON → mysql2 → TypeORM, later Prisma). Do not use long-lived ORM branches or SemVer for those snapshots.
+Finish TypeORM with a real Cart + CartItem relation (guest basket, items point at products). Same `/cart` HTTP. No Prisma yet.
 
 ## Done
 
-- Four annotated tags pushed to `origin`; four GitHub Releases created (2026-08-31):
-  - `chapter-json` @ `21da87c` — https://github.com/engmagdy87/backend-concepts/releases/tag/chapter-json
-  - `chapter-mysql-products` @ `cac967e` — https://github.com/engmagdy87/backend-concepts/releases/tag/chapter-mysql-products
-  - `chapter-mysql2` @ `9614107` — https://github.com/engmagdy87/backend-concepts/releases/tag/chapter-mysql2
-  - `chapter-typeorm` @ `ead611b` (Latest) — https://github.com/engmagdy87/backend-concepts/releases/tag/chapter-typeorm
-- Rule `.cursor/rules/chapter-releases.mdc`: agent decides tag/Release only on a new persistence/architecture era.
-- Inbox note in both `BACKEND-REFERENCE.md` copies: SemVer versions the HTTP contract; `chapter-*` are curriculum bookmarks; agent decides at commit time.
-- Commit `9584353` pushed to `origin/main`: *Add a chapter-release rule for era snapshots on GitHub.*
-- No new chapter tag on `9584353` (process, still TypeORM era). User was told that.
+- MySQL (observed `SHOW CREATE TABLE`): `carts` (`id=1` guest row); `cart_items.cartId` NOT NULL; `UNIQUE (cartId, productId)`; FKs to `carts` and `products` (`ON DELETE CASCADE`).
+- Dropped old unique `uq_cart_items_productId` after `ERROR 1553 (HY000): Cannot drop index 'uq_cart_items_productId': needed in a foreign key constraint` — dropped `fk_cart_items_product` first, then re-added.
+- Models: `Cart` → table `carts`; `CartItem` → `cart_items`; `Product.cartItems` `@OneToMany`. Inverted `Product.cart` / `new Cart()` removed.
+- `synchronize: false`. Schema was manual SQL, not TypeORM.
+- TypeORM 1: `relations: { product: true }` — string array form threw `TypeORMError: String-array "relations" syntax has been removed.`
+- Verified via `yarn tsx`: add product 6 twice → qty 2, nested title `Alpine Breeze Bamboo Cutting Board`; remove → qty 1; `clearForCart` → 0 rows.
+- Verified HTTP: `POST /cart/items` `{"productId":6}` returned nested `product`. `GET /shop/products` still 10 rows, no `cartItems` on the JSON.
+- Postman local file updated; cloud `putCollection` `35152687-42d4f03c-deec-4df2-886e-1f1e59ad40ea` succeeded (`updatedAt` `2026-09-20T21:21:23.000Z`). `productId` variable `6`.
+- Deleted leftover `data/cart.json`. README no longer says the cart is a file.
+- User confirmed Postman sidebar (Admin / Shop / Cart) is the expected API. No new routes.
+- User asked “do we need a release?” — **no**. Still TypeORM era. Do not retag `chapter-typeorm`. Next era tag is `chapter-prisma`.
+- Prior `git commit` in this session **aborted** (`Command failed to spawn`). Changes still staged on `main` @ `f3adba5`, up to date with `origin/main`.
 
 ## In progress
 
-- Branch: `main` (tracks `origin/main`). Working tree clean. No uncommitted changes.
-- App still TypeORM (`Product` / `Cart` entities, `AppDataSource`). Prisma not started.
-- User asked whether TypeORM → Prisma is possible: **yes**, swap models + DB wiring only; keep routes/controllers/cart service; don’t run both ORMs. Not implemented this session.
+- Branch: `main` (tracks `origin/main`).
+- Staged (12 files) plus this `HANDOFF.md` (overwrite of previous chapter-tag handoff): `BACKEND-REFERENCE.md`, `CHANGELOG.md`, `LEARNING.md`, `README.md`, `data/cart.json` (delete), `models/cart-item.model.ts` (new), `models/cart.model.ts`, `models/product.model.ts`, `postman/backend-concepts.postman_collection.json`, `services/cart.service.ts`, `types/cart.types.ts`, `utils/database.utils.ts`.
+- `getCartService` still: `Cart.getOrCreateGuest()` then `CartItem.listForCart(cart.id)` — two queries. Guest find has no `relations`. Explained; user has not asked to fold into `cart.items`.
+- Guest cart contents after HTTP POST: one line for product 6 unless cleared since. Not re-checked after README/`cart.json` delete.
 
 ## Files
 
-- `.cursor/rules/chapter-releases.mdc` — when to tag; next expected `chapter-prisma`
-- `.cursor/rules/progress-log.mdc` — CHANGELOG / LEARNING on feature commits
-- `BACKEND-REFERENCE.md` — mentor notebook (repo copy)
-- `~/.cursor/skills/backend-learning-reference/BACKEND-REFERENCE.md` — same notes, personal skill (not in git)
-- `CHANGELOG.md` — `[0.1.0]` JSON era; later work still `[Unreleased]`
-- `LEARNING.md` — practice log; TypeORM entries 2026-08-30
-- `models/product.model.ts`, `models/cart.model.ts`, `utils/database.utils.ts` — current TypeORM persistence
-- `services/cart.service.ts` — orchestration; would stay on a Prisma swap
+- `models/cart.model.ts` — guest `Cart` header; `getOrCreateGuest` (`find({ take: 1 })`)
+- `models/cart-item.model.ts` — add/remove/clear/list; `@ManyToOne` cart + product
+- `models/product.model.ts` — `cartItems` inverse only
+- `services/cart.service.ts` — published check then guest cart + items
+- `utils/database.utils.ts` — entities `[Product, Cart, CartItem]`
+- `postman/backend-concepts.postman_collection.json` — cart notes; `{{productId}}`
+- `BACKEND-REFERENCE.md` + `~/.cursor/skills/backend-learning-reference/BACKEND-REFERENCE.md` — inbox (skill copy not in git)
+- `.cursor/rules/chapter-releases.mdc` — skip tag unless new era
 
 ## Decisions
 
-- **Tags + Releases on `main`**, not long-lived `typeorm` / `prisma` branches. Branches are for in-progress work then deleted.
-- **GitHub Milestones rejected** for freezing code (issue board only).
-- **Four chapter tags only.** Rejected: per-commit tags; `v0.1.0`/`v1.x`; optional API tags (`chapter-layers`, `chapter-cart`, `chapter-put`); PATCH as its own chapter.
-- **`chapter-mysql2` on `9614107`**, not `ba3f2db` (notes-only).
-- **`chapter-typeorm` on `ead611b`**, not HEAD after the rule commit. Do not move that tag.
-- SemVer (`v1.0.0`) only if the public HTTP API is what others pin to. ORM swap with same routes is not a MINOR bump of the JSON era.
-- Agent **decides** tag vs skip at commit time; skip if not a new era; say so so the user can override.
+- ERD: **Cart 1 — * CartItem * — 1 Product**. Rejected `cartId` on `products`.
+- One **active** cart per user is a business rule; no `users` table until auth. Today: one guest `carts` row.
+- `productId` stays on the **item** (and on `POST/DELETE /cart/items` body). Not removed from MySQL.
+- Array `{ product, quantity }[]` is the in-memory shape; SQL stores one row per object.
+- Unique is `(cartId, productId)`, not global `productId`.
+- No GitHub Release / `chapter-*` tag on this commit. User may override.
 
 ## Constraints
 
-- Don’t implement unless the user explicitly asks (architect-mentor). Prisma was design-only.
-- Don’t retag old chapters or move `chapter-typeorm`.
-- Don’t run TypeORM and Prisma against the same tables at once.
-- Ask mode was on for the design questions; Agent mode for tags, rule, commit/push.
-- User: commit only when asked; this session they asked to commit and push the rule.
+- Architect-mentor: don’t implement unless asked. This session they asked: apply pass 1, Postman, remove `cart.json`, commit+push.
+- Commit only when asked. Don’t force-push. Don’t retag `chapter-typeorm`.
+- Don’t run TypeORM and Prisma on the same tables.
+- `synchronize` stays `false`.
 
 ## Blocked / open
 
-- Prisma rewrite not requested. User would switch to Agent mode for the actual swap.
-- TypeORM “comfortable enough” (relations) was advised before Prisma; not verified this session whether they want that first.
+- Pass 2 (`users` + `carts.userId`) not requested.
+- Optional GET improvement: load `relations: { items: { product: true } }` and return `cart.items` instead of `listForCart`.
+- `BACKEND-REFERENCE.md` inbox has a duplicated “Cart as an array vs CartItem rows” block under “Cart header + line”. Cosmetic.
 
 ## Next
 
-1. If starting Prisma: branch `learn/prisma`, map existing MySQL tables in `schema.prisma`, rewrite only `models/` + `utils/database.utils.ts`; keep HTTP/Postman the same.
-2. After that merge to `main`: annotated tag `chapter-prisma` + `gh release create` (rule).
-3. Until then: stay on TypeORM; no extra `chapter-*` tags for docs/fixes.
+1. Commit the staged work + this handoff; `git push origin main`. Skip `chapter-*` tag; say so.
+2. If continuing TypeORM: fold GET cart into `relations` on the guest cart (only if asked).
+3. Prisma era when they want it: branch `learn/prisma`, rewrite `models/` + DataSource only; then `chapter-prisma` + Release.

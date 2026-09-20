@@ -8,6 +8,61 @@ Canonical copy also lives at `~/.cursor/skills/backend-learning-reference/BACKEN
 
 ## Inbox
 
+### 2026-09-20 — TypeORM `find`: where, then order, then skip/take, then relations
+
+- Pick the method first: `findOneBy({ id })` for one row by columns; `find({ where })` for a list (and for `take` / `order` / `relations`). `find()` with no options is `SELECT *`.
+- Inside `find({ ... })` think SQL: **`where`** (which rows) → **`order`** (sort) → **`skip` / `take`** (OFFSET / LIMIT) → **`relations`** (JOIN). Key order in the object does not matter; that sequence is how you read it.
+- Writes stay as already practiced: `save` (insert/update an instance), `update(id, fields)`, `remove(entity)`, `delete(criteria)`.
+- `@OneToMany items` is empty until you load it. `getOrCreateGuest` today is only the cart row (`take: 1`). `listForCart` is a second query. Same list from the cart: `find({ take: 1, relations: { items: { product: true } } })` then `cart.items`.
+
+### 2026-09-20 — `synchronize` is “should TypeORM reshape MySQL?”
+
+- `synchronize: true` — on `DataSource.initialize()`, TypeORM creates/alters tables to match the entity classes. Handy on an empty throwaway DB. Dangerous on a real one: it can drop columns, indexes, or data you did not mean to drop.
+- `synchronize: false` (this repo) — classes only **map** existing tables. Schema changes are your SQL (`CREATE TABLE carts`, `ALTER … cartId`). That is why pass 1 did not appear just from adding `@Entity`.
+- Industry default for anything you care about: **migrations** (dated SQL files you run on purpose). Prisma’s `migrate` is the same idea. Do not turn `synchronize` on to skip the `carts` SQL.
+
+### 2026-09-20 — Pass 1: Cart header + CartItem (applied)
+
+- Tables: `carts` and `cart_items` (`cartId`). Class `Cart` is the basket; `CartItem` is one `{ product, quantity }`. Product has `cartItems`, not `cart`.
+- One guest cart via `Cart.getOrCreateGuest()`. `find({ take: 1 })` is SQL `LIMIT 1` (`skip` is `OFFSET`). Column filters go in **`where`**: `find({ where: { id: 1 }, take: 1 })`. `take` / `skip` / `order` / `relations` are find options, not columns. Add/remove/clear use that cart’s id. Clear is `delete({ cartId })`, not `TRUNCATE` (that would wipe every cart).
+- Unique is `(cartId, productId)` — one product per cart, not globally. `GET /cart` uses `relations: { product: true }` (TypeORM 1 dropped the string-array form). Users / `carts.userId` still later.
+
+### 2026-09-20 — Cart as an array vs CartItem rows
+
+- In memory / JSON, a cart *is* `[{ product, quantity }, …]`. `data/cart.json` was that. A `CartItem` row is one element of that array, stored in SQL.
+- MySQL does not have a first-class “array of objects” column you can join and unique-index easily. Options: JSON file (old), JSON column on `carts` (load/rewrite the whole blob), or a `cart_items` table (one object → one row). Default on SQL: the table.
+- Do not hang `quantity` on `Product` or embed the whole product as the source of truth. Quantity is “this cart’s hold on that product.” The catalog stays one `products` row. `GET /cart` can still *look like* the array.
+
+### 2026-09-20 — Cart header + line (so OneToMany reads normally)
+
+- In memory / JSON, a cart *is* `[{ product, quantity }, …]`. `data/cart.json` was that. A `CartItem` row is one element of that array, stored in SQL.
+- MySQL does not have a first-class “array of objects” column you can join and unique-index easily. Options: JSON file (old), JSON column on `carts` (load/rewrite the whole blob), or a `cart_items` table (one object → one row). Default on SQL: the table.
+- Do not hang `quantity` on `Product` or embed the whole product as the source of truth. Quantity is “this cart’s hold on that product.” The catalog stays one `products` row. `GET /cart` can still *look like* the array.
+
+### 2026-09-20 — Cart header + line (so OneToMany reads normally)
+
+- The “normal” pair is **Cart 1 — * CartItem * — 1 Product**. Cart has many items; each item belongs to one cart and one product. Product does **not** belong to a cart (`cartId` on `products` would mean a catalog row lives in one basket).
+- **Line** = one row on the receipt (“2× Book”). Same thing as `CartItem` / `cart_items`. Not a special TypeORM word.
+- This repo today collapsed that into one table of lines named `Cart`. That is why the decorators felt backwards. A `carts` table is a new model, not a rename of `cart_items`.
+- Keep HTTP as one guest cart (`GET /cart`, `POST /cart/items` `{ productId }`). Until auth, there is one `carts` row. `productId` stays on the cart item (and in the request body); it does not move onto Product.
+- Typical picture with login: one **active** cart per user. That is a business rule, not “never more than one cart row.” History of abandoned carts is optional; checkout usually becomes an **order**, not a second living cart. This repo has no `users` table yet.
+- Refactor in two passes, `synchronize` still **false**. Pass 1: `CREATE TABLE carts`, `ALTER cart_items ADD cartId`, rename class `Cart` → `CartItem`, real `Cart` with `items`, Product `cartItems` (not `cart`). Guest cart = one row; service find-or-create; add/remove scoped to that cart; drop `Product.cart` / `new Cart()`. Pass 2: `users` + `carts.userId` only with auth. Do not add users just to match the ERD picture.
+
+### 2026-09-20 — How to read a relation (one row, then name it)
+
+- Ignore the shop sentence (“a cart has many products”). `Cart` here is a **line** in `cart_items`, not a basket.
+- Ask: for **one row of this table**, how many of the other? One cart line → one product (`product` + `@ManyToOne`). One product → many cart lines (`cartItems` + `@OneToMany`).
+- The class that stores `productId` is the many side. `@JoinColumn({ name: "productId" })` goes there. Don’t invent `products.cartId`. Don’t `= new Cart()`.
+- `() => Product` is “the other class.” `(product) => product.cartItems` is only “the field on the way back.” Neither one picks Many vs One — the **property type** does (object = one, array = many).
+- Decorators are a JOIN. A MySQL foreign key is a separate lock. Use `relations: ["product"]` first; add the DB constraint later if you want orphans rejected.
+- The table name `cart_items` is honest (each row is a line). What feels wrong is the **class** `Cart`. You can drop the extra `@Column productId` once `@ManyToOne` + `@JoinColumn` owns it — MySQL still keeps that column. Don’t rename the table to `carts` to match the shop sentence; a `carts` table is a later header (one cart per user). HTTP `{ productId }` on add/remove stays.
+
+### 2026-09-17 — Finish TypeORM with a relation before swapping ORMs
+
+- After two entities on TypeORM (`Product`, `Cart`), the next *concept* is a **relation**, not a second ORM. `Cart.productId` is still a plain `int` — no `@ManyToOne` / `@OneToMany`.
+- Prisma is the next *era* (`chapter-prisma`): same HTTP, rewrite `models/` + `DataSource` only. Jump there when CRUD + one relation feels enough — not to “finish” the cart.
+- Cart add/get/remove/clear already use `cart_items`. `data/cart.json` is leftover, not a store. Don’t run TypeORM and Prisma on the same tables.
+
 ### 2026-08-31 — SemVer versions the public API, not the ORM
 
 - GitHub Releases commonly use `v1.0.0` / `v1.1.0` (SemVer) when others depend on the **HTTP contract**. MAJOR = breaking routes/bodies; MINOR = additive; PATCH = fix.
@@ -411,7 +466,10 @@ Ideas not implemented, or “next when ready”:
 - [ ] README layout must stay in sync when folders/files change (easy to forget)
 - [ ] Ping MySQL at boot (`SELECT 1`) before `app.listen`
 - [x] Product model on MySQL (`data/products.json` removed)
-- [ ] Cart remove still JSON (`data/cart.json`); add / get / clear use `cart_items`
+- [x] Cart on MySQL `cart_items` (TypeORM). `data/cart.json` is leftover file, not a store
+- [x] Cart header + CartItem line (`carts` + `cart_items`); relations Cart 1—* CartItem *—1 Product; drop the inverted Product.cart mapping
+- [ ] Prisma era when TypeORM CRUD + one relation feels enough (keep routes; swap models + DataSource)
+- [x] Drop leftover `data/cart.json` and fix README (still says the cart is a JSON file)
 
 ---
 
@@ -442,9 +500,9 @@ controllers/cart.controller.ts
 services/cart.service.ts
 models/product.model.ts
 models/cart.model.ts
+models/cart-item.model.ts
 types/product.types.ts
 utils/database.utils.ts
-data/cart.json
 ```
 
 Shop: `Product.fetchPublished` / `fetchPublishedById`  

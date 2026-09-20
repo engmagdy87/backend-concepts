@@ -4,6 +4,13 @@ Notes on backend concepts practiced in this repo. Newest entries first.
 
 Update this file when a feature teaches a concept worth keeping. Skip chores, formatting-only changes, and WIP commits.
 
+## 2026-09-20 — Cart vs cart item (relation follows the FK)
+
+- A cart is the basket. A cart item is one `{ product, quantity }` row. `@ManyToOne` sits on the item (`cartId`, `productId`); Product does not belong to a cart.
+- In JSON that list is an array; in MySQL each object is a `cart_items` row. Unique `(cartId, productId)` is one product per cart, not globally.
+- Clear that cart with `delete({ cartId })`. `clear()` / `TRUNCATE` would wipe every cart.
+- TypeORM 1: `relations: { product: true }`, not `relations: ["product"]`.
+
 ## 2026-08-30 — Match the sentinel the service actually returns
 
 - `removeFromCartService` returns `undefined` for a bad `productId`. `cart === null` never runs. Check `undefined` (or return `null` from both sides).

@@ -1,6 +1,6 @@
 # backend-concepts
 
-Express and TypeScript backend learning project. Products live in MySQL (admin = full catalog, shop = published only). The cart is still a JSON file.
+Express and TypeScript backend learning project. Products and the cart live in MySQL (admin = full catalog, shop = published only). The cart is one guest basket (`carts`) plus items (`cart_items`).
 
 - [Changelog](CHANGELOG.md) — shipped API and product changes
 - [Learning log](LEARNING.md) — backend concepts practiced here
@@ -108,10 +108,9 @@ routes/shop.route.ts        # Shop product routes
 routes/cart.route.ts        # Cart routes
 controllers/                # HTTP handlers (status codes + JSON)
 services/                   # Use-case glue (cart ↔ product)
-models/                     # Product / Cart domain + persistence
+models/                     # Product / Cart / CartItem domain + persistence
 types/                      # Shared input / record types
-utils/                      # Pool, cart JSON helpers, number helpers
-data/cart.json              # File-backed cart store
+utils/                      # DataSource, number helpers
 ```
 
 ```mermaid
@@ -128,7 +127,8 @@ flowchart LR
   CartCtrl --> CartSvc["cart.service.ts"]
   CartSvc --> ProdModel
   CartSvc --> CartModel["cart.model.ts"]
+  CartSvc --> CartItemModel["cart-item.model.ts"]
 ```
 
-A request hits `app.ts`, which parses the body and mounts `/admin`, `/shop`, or `/cart`. Product admin/shop handlers use the product controller and MySQL-backed model. Cart handlers use a service that checks published products in MySQL, then updates `data/cart.json`.
+A request hits `app.ts`, which parses the body and mounts `/admin`, `/shop`, or `/cart`. Product admin/shop handlers use the product controller and MySQL-backed model. Cart handlers use a service that checks published products, then updates the guest cart in MySQL.
 
