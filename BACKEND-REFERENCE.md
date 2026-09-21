@@ -8,6 +8,27 @@ Canonical copy also lives at `~/.cursor/skills/backend-learning-reference/BACKEN
 
 ## Inbox
 
+### 2026-09-22 — API language (i18n) is content, not list knobs
+
+- Client sends a language (`Accept-Language` header and/or `?lang=en`). API returns **localized fields** (title, description, error messages) — not a different product set unless you filter by locale on purpose.
+- Options: (A) extra columns (`title_en`, `title_ar`) — fine for 2 locales; (B) `product_translations` table (`productId`, `lang`, `title`, …) — industry default once many locales; (C) external CMS / i18n files — UI strings, not catalog rows.
+- This repo today: single `title` / `description` strings. Add language **after** list APIs feel familiar; it changes the schema, not just `find` options. Do not fold i18n into the same change as sort/page.
+- Advanced later: fallback locale, admin editing all translations, caching by lang.
+
+### 2026-09-22 — List APIs: page / sort / filter (when, not how)
+
+- **Pagination** = slice the result (`skip`/`take` or cursor). **Sort** = `order`. **Filter** = `where` (and search is a soft filter). Same TypeORM `find` recipe already noted: where → order → skip/take.
+- Industry default for large catalogs: page + total (or cursor), allowlisted `sort`, typed filters via **query string** (`?page=2&limit=20&sort=price&order=asc`). Response wraps `{ data, meta }` so the client can build UI.
+- This repo (~10 products, cart is tiny): returning the full array is fine. Do **not** paginate the cart. Practice list controls on **shop/admin products** only when you want the query-param + `find` lesson — not because the DB is “too big.”
+- Do one dimension first (e.g. `order` only, or `page`+`limit` only). Don’t ship cursor pagination, full-text search, and GraphQL field selection in the same change.
+- Advanced later: cursor/`keyset` for infinite scroll, `LIKE`/full-text for title search, indexes on sorted columns, OpenAPI for the query contract.
+
+### 2026-09-22 — `*.model.ts` vs `*.entity.ts`
+
+- TypeORM’s word for the mapped class is **entity** (`@Entity`). Nest/TypeORM tutorials often use `product.entity.ts`. That is a file-role label, not a second type — class stays `Product`, not `ProductEntity`.
+- This repo’s word is **model**: the domain thing that owns its row + find/save/update (`product.model.ts`). Same class; the suffix names *your* layer, not the ORM decorator.
+- Do not rename for vocabulary alone. Switch to `entities/*.entity.ts` only if you deliberately adopt that stack’s folder style (e.g. Nest). Prisma’s `model` in schema.prisma is unrelated to the file suffix.
+
 ### 2026-09-21 — `getOrCreateGuest` is domain, not a util helper
 
 - It *feels* like a helper (short, reused). It is still **Cart meaning**: “ensure the guest basket row exists.” Keep it on the model (`Cart.getOrCreateGuest`), not `utils/`.
@@ -362,7 +383,8 @@ shop.route.ts
 
 - Entity files **singular**; controller **plural** is a common, intentional mix. Stick to it.
 - SQL tables here are **plural / collective** (`products`, `cart_items`). The class stays singular (`Product`, `Cart`). `@Entity({ name })` is the table name, not a style vote — it must match MySQL.
-- Other valid styles exist (`Product.ts` in `models/`, kebab-case). Pick one per repo.
+- `.model.ts` vs `.entity.ts` is the same class with a different role word (domain model vs ORM entity). This repo keeps `.model.ts` / `models/`. Do not rename mid-chapter for TypeORM docs alone.
+- Other valid styles exist (`Product.ts` in `models/`, Nest `entities/product.entity.ts`). Pick one per repo.
 
 ### REST paths
 
@@ -486,6 +508,20 @@ await fs.promises.writeFile(productsFilePath, JSON.stringify(products));
 
 Ideas not implemented, or “next when ready”:
 
+### What’s next (pick order freely)
+
+- [ ] **List APIs (still TypeORM, product lists only — not cart):** one skill at a time, same chapter, no `chapter-*` tag
+  - [ ] **Sort** — `?sort=` / `?order=` → TypeORM `order` (allowlisted columns)
+  - [ ] **Pagination** — `?page=` / `limit` → `skip`/`take` + `{ data, meta }`
+  - [ ] **Filter** — hard constraints via query (`where`), e.g. admin by `isPublished`
+  - [ ] **Search** — soft text match (`?q=` → `LIKE` / full-text later)
+- [ ] **Language / i18n** — client sends lang (`Accept-Language` or `?lang=`); API returns localized `title`/`description` (translation table or `title_en` columns). Schema change — after list knobs, not with them
+- [ ] **Prisma era** (`chapter-prisma`): when TypeORM CRUD + one relation feels enough — keep routes; swap `models/` + DataSource only
+- [ ] Auth / `carts.userId` (pass 2) when you want users, not before
+- [ ] Nest (or similar) only when the Express layers feel boring — not the next step after cart
+
+### Smaller / REST polish
+
 - [x] `PUT /admin/products/:id` (full body; id in the URL)
 - [ ] `PATCH /admin/products/:id` if you later want partial updates
 - [ ] `DELETE /admin/products/:id` (still `POST /admin/delete-product`)
@@ -498,7 +534,6 @@ Ideas not implemented, or “next when ready”:
 - [x] Product model on MySQL (`data/products.json` removed)
 - [x] Cart on MySQL `cart_items` (TypeORM). `data/cart.json` is leftover file, not a store
 - [x] Cart header + CartItem line (`carts` + `cart_items`); relations Cart 1—* CartItem *—1 Product; drop the inverted Product.cart mapping
-- [ ] Prisma era when TypeORM CRUD + one relation feels enough (keep routes; swap models + DataSource)
 - [x] Drop leftover `data/cart.json` and fix README (still says the cart is a JSON file)
 
 ---
@@ -511,6 +546,9 @@ Ideas not implemented, or “next when ready”:
 4. ~~Update / delete endpoints~~ done (verb-style POSTs; REST verbs still optional)
 5. Async I/O
 6. Service only if workflows appear
+7. List APIs on product lists: sort → pagination → filter → search (see Drafts → What’s next)
+8. Language / i18n on product fields (after list knobs; see Drafts)
+9. Prisma era when ready (`chapter-prisma`)
 
 ---
 

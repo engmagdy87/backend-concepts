@@ -1,7 +1,4 @@
 import { DataSource } from "typeorm";
-import Product from "../models/product.model";
-import Cart from "../models/cart.model";
-import CartItem from "../models/cart-item.model";
 
 export const AppDataSource = new DataSource({
   type: "mysql",
@@ -10,7 +7,7 @@ export const AppDataSource = new DataSource({
   username: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
-  entities: [Product, Cart, CartItem],
+  entities: [__dirname + "/../models/*.model.ts"],
   synchronize: false,
   logging: true,
 });

@@ -34,7 +34,7 @@ class CartItem {
   cart!: Cart;
 
   @ManyToOne(() => Product, (product) => product.cartItems)
-  @JoinColumn({ name: "productId" })
+  @JoinColumn({ name: "productId" }) // FK column for this relation (same as the productId @Column)
   product!: Product;
 
   static async addToCart(cartId: number, productId: number) {
