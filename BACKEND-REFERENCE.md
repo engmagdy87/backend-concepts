@@ -8,6 +8,14 @@ Canonical copy also lives at `~/.cursor/skills/backend-learning-reference/BACKEN
 
 ## Inbox
 
+### 2026-09-22 — Postgres (when, not how)
+
+- **Postgres** = a different SQL engine, not a different API. Same tables idea (`products`, `carts`, `cart_items`); change is connection + dialect (`pg` peer, `type: "postgres"`, env URL), not new routes.
+- Options: (A) keep TypeORM, swap MySQL → Postgres DataSource; (B) introduce Postgres as the DB under the Prisma era; (C) stay on MySQL until Prisma — fine for this repo.
+- This repo today: MySQL via TypeORM (`mysql2`). Do **not** add Postgres mid-cart polish. Practice it when you want a second engine, or as the store for `chapter-prisma` — not because MySQL is “wrong.”
+- Do one cutover at a time. Don’t run TypeORM-on-MySQL and Prisma-on-Postgres against the same learning DB story in one commit.
+- Advanced later: migrations that are dialect-aware, connection pooling tuning, JSON/array column differences vs MySQL.
+
 ### 2026-09-22 — API language (i18n) is content, not list knobs
 
 - Client sends a language (`Accept-Language` header and/or `?lang=en`). API returns **localized fields** (title, description, error messages) — not a different product set unless you filter by locale on purpose.
@@ -65,6 +73,12 @@ Canonical copy also lives at `~/.cursor/skills/backend-learning-reference/BACKEN
 - Inside `find({ ... })` think SQL: **`where`** (which rows) → **`order`** (sort) → **`skip` / `take`** (OFFSET / LIMIT) → **`relations`** (JOIN). Key order in the object does not matter; that sequence is how you read it.
 - Writes stay as already practiced: `save` (insert/update an instance), `update(id, fields)`, `remove(entity)`, `delete(criteria)`.
 - `@OneToMany items` is empty until you load it. `getOrCreateGuest` today is only the cart row (`take: 1`). `listForCart` is a second query. Same list from the cart: `find({ take: 1, relations: { items: { product: true } } })` then `cart.items`.
+
+### 2026-09-22 — Migrations: when you need them
+
+- A migration is a **named, versioned schema change** (usually SQL or a tool-generated file) you run on purpose, tracked so every environment ends up the same. Same job as the hand-run `CREATE` / `ALTER` you already did — just repeatable and ordered.
+- Options: (1) hand SQL in the client (this repo now), (2) TypeORM migration files + CLI, (3) Prisma `migrate`, (4) `synchronize: true` (not a migration — auto reshape). Industry default once you have more than one DB or more than one person: **migrations**.
+- This repo now: one learning MySQL, schema already matches entities, `synchronize: false`. You do **not** need a migration tool yet. Adopt migrations when you switch DB (Postgres), wipe/rebuild often, or enter the Prisma era — Prisma’s natural path is `migrate`, not hand SQL forever.
 
 ### 2026-09-20 — `synchronize` is “should TypeORM reshape MySQL?”
 
@@ -516,6 +530,8 @@ Ideas not implemented, or “next when ready”:
   - [ ] **Filter** — hard constraints via query (`where`), e.g. admin by `isPublished`
   - [ ] **Search** — soft text match (`?q=` → `LIKE` / full-text later)
 - [ ] **Language / i18n** — client sends lang (`Accept-Language` or `?lang=`); API returns localized `title`/`description` (translation table or `title_en` columns). Schema change — after list knobs, not with them
+- [ ] **Postgres** — same HTTP; swap engine (`pg` + DataSource `type: "postgres"`, or as the DB under Prisma). Not a new chapter tag by itself unless you treat it as its own era
+- [ ] **Migrations** — versioned schema files you run on purpose (TypeORM migrate CLI, or Prisma `migrate`). Same job as hand `CREATE`/`ALTER`; adopt when you switch DB, wipe/rebuild often, or enter Prisma. Keep `synchronize: false`
 - [ ] **Prisma era** (`chapter-prisma`): when TypeORM CRUD + one relation feels enough — keep routes; swap `models/` + DataSource only
 - [ ] Auth / `carts.userId` (pass 2) when you want users, not before
 - [ ] Nest (or similar) only when the Express layers feel boring — not the next step after cart
@@ -548,7 +564,9 @@ Ideas not implemented, or “next when ready”:
 6. Service only if workflows appear
 7. List APIs on product lists: sort → pagination → filter → search (see Drafts → What’s next)
 8. Language / i18n on product fields (after list knobs; see Drafts)
-9. Prisma era when ready (`chapter-prisma`)
+9. Postgres when you want a second engine (or under Prisma) — see Drafts → What’s next
+10. Migrations (TypeORM CLI or Prisma `migrate`) when hand SQL stops scaling — see Drafts / Inbox
+11. Prisma era when ready (`chapter-prisma`)
 
 ---
 

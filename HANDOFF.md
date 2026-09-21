@@ -21,7 +21,7 @@ TypeORM cart chapter is finished: guest `Cart` + `CartItem` lines pointing at pr
 
 ## In progress
 
-- Branch: `main` (tracks `origin/main`). This turn: rewrite `HANDOFF.md` only (Postgres on Next; Done refreshed after cart landed).
+- Branch: `main` (tracks `origin/main`). Working tree may have this turn’s doc edits (`BACKEND-REFERENCE.md` + handoff Postgres moved to Drafts).
 - `getCartService` still: `Cart.getOrCreateGuest()` then `CartItem.listForCart(cart.id)` — two queries. Guest find has no `relations`. Explained; user has not asked to fold into `cart.items`.
 - Guest DB row state not re-checked this session.
 
@@ -43,7 +43,7 @@ TypeORM cart chapter is finished: guest `Cart` + `CartItem` lines pointing at pr
 - `productId` stays on the **item** (and on `POST/DELETE /cart/items` body).
 - Unique is `(cartId, productId)`, not global `productId`.
 - No GitHub Release / `chapter-*` tag until a new persistence era.
-- User asked this session: put **Postgres** on the handoff Next list (before / alongside the Prisma move).
+- **Postgres** lives in `BACKEND-REFERENCE.md` Drafts → What’s next (and Inbox), not on this handoff Next list.
 
 ## Constraints
 
@@ -61,5 +61,5 @@ TypeORM cart chapter is finished: guest `Cart` + `CartItem` lines pointing at pr
 ## Next
 
 1. Optional TypeORM polish only if asked: fold GET cart into `relations: { items: { product: true } }` on the guest cart.
-2. **Postgres** — next store move when they want it (TypeORM driver swap and/or as the DB under Prisma); update DataSource / env / schema notes; do not invent the migration path until asked.
+2. Learning roadmap (list APIs, i18n, Postgres, Prisma, …) — see `BACKEND-REFERENCE.md` → Drafts → What’s next; pick when asked.
 3. Prisma era when they want it: branch `learn/prisma`, rewrite `models/` + DataSource only; then `chapter-prisma` + Release.
