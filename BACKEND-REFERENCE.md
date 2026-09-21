@@ -8,6 +8,36 @@ Canonical copy also lives at `~/.cursor/skills/backend-learning-reference/BACKEN
 
 ## Inbox
 
+### 2026-09-21 — `getOrCreateGuest` is domain, not a util helper
+
+- It *feels* like a helper (short, reused). It is still **Cart meaning**: “ensure the guest basket row exists.” Keep it on the model (`Cart.getOrCreateGuest`), not `utils/`.
+- Utils = no domain (`isPositiveInteger`, path join). Service = orchestrate several models. Find-or-create for one entity stays on that entity.
+- Pattern name: find-or-create. Today: `find({ take: 1 })` then `save`. With auth: find by `userId` then create — same idea, different key.
+
+### 2026-09-21 — `Cart` is the basket header (id today is enough)
+
+- `carts` is not “a useless one-column table.” It is the **basket**. `id` is the thing `cart_items.cartId` points at. `items` is a TypeORM relation (loaded on demand), not a MySQL column.
+- Today: one guest row via `getOrCreateGuest()`; every add/remove/clear/list scopes to that `cart.id`. Without a header, lines have nothing to group by once you have more than one basket.
+- Later columns (with auth): `userId`, maybe `status` / timestamps — still the same header. Do not invent users just to fill the table.
+
+### 2026-09-21 — No quantity → `@ManyToMany` (hidden join table)
+
+- Drop `quantity` (and any other link fields) and Cart ↔ Product is still many-to-many. MySQL still needs a third table; TypeORM maps it as `@ManyToMany` + `@JoinTable` instead of a `CartItem` class.
+- With payload on the link (`quantity`, `addedAt`, …) keep the association entity (two `@ManyToOne`s). Same SQL shape; you own the middle table as a model.
+- A JOIN is only how SQL loads related rows. You JOIN on 1—* too. Do not add a middle table “to make joins work.”
+
+### 2026-09-21 — `CartItem` exists for M:N, not “for joins”
+
+- The third table is there because Cart ↔ Product is many-to-many (plus `quantity`). `@ManyToOne` twice is how we map that when the link has columns. `@ManyToMany` is the same idea with a hidden join table — skip it while qty lives on the row.
+- A **JOIN** is only how SQL loads related rows (`relations: { product: true }`). You JOIN on 1—* too. Do not add `cart_items` “to make joins work.”
+
+### 2026-09-21 — Join table vs association entity (`CartItem`)
+
+- SQL cannot put a many-to-many on two tables alone. Cart ↔ Product needs a third table. `cart_items` is that table (`cartId` + `productId`).
+- A **pure junction** is only those two FKs (TypeORM `@ManyToMany` + `@JoinTable`). Use it when the link has no extra facts.
+- This repo’s `CartItem` is an **association entity**: same join, plus `quantity` and its own `id`. Two `@ManyToOne`s, not a hidden join table — you need a class to hold qty.
+- Read it both ways: Cart 1—* CartItem *—1 Product (line on a receipt), and Cart *—* Product through `cart_items` (which products are in which baskets).
+
 ### 2026-09-20 — TypeORM `find`: where, then order, then skip/take, then relations
 
 - Pick the method first: `findOneBy({ id })` for one row by columns; `find({ where })` for a list (and for `take` / `order` / `relations`). `find()` with no options is `SELECT *`.
