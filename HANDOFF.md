@@ -2,43 +2,43 @@
 
 ## Goal
 
-TypeORM cart chapter is finished: guest `Cart` + `CartItem` lines pointing at products, same `/cart` HTTP. Stay on MySQL until the next persistence move. No Prisma yet.
+TypeORM cart chapter finished on MySQL: guest `Cart` + `CartItem` → `Product`, same `/cart` HTTP. Next persistence era (Prisma / Postgres) only when asked. No auth yet.
 
 ## Done
 
-- MySQL (observed `SHOW CREATE TABLE`): `carts` (`id=1` guest row); `cart_items.cartId` NOT NULL; `UNIQUE (cartId, productId)`; FKs to `carts` and `products` (`ON DELETE CASCADE`).
-- Dropped old unique `uq_cart_items_productId` after `ERROR 1553 (HY000): Cannot drop index 'uq_cart_items_productId': needed in a foreign key constraint` — dropped `fk_cart_items_product` first, then re-added.
-- Models: `Cart` → table `carts`; `CartItem` → `cart_items`; `Product.cartItems` `@OneToMany`. Inverted `Product.cart` / `new Cart()` removed.
-- `synchronize: false`. Schema was manual SQL, not TypeORM.
-- TypeORM 1: `relations: { product: true }` — string array form threw `TypeORMError: String-array "relations" syntax has been removed.`
-- Verified via `yarn tsx`: add product 6 twice → qty 2, nested title `Alpine Breeze Bamboo Cutting Board`; remove → qty 1; `clearForCart` → 0 rows.
-- Verified HTTP: `POST /cart/items` `{"productId":6}` returned nested `product`. `GET /shop/products` still 10 rows, no `cartItems` on the JSON.
-- Postman local + cloud `putCollection` `35152687-42d4f03c-deec-4df2-886e-1f1e59ad40ea` synced; `productId` variable `6`.
-- Deleted leftover `data/cart.json`. README no longer says the cart is a file.
-- User confirmed Postman sidebar (Admin / Shop / Cart) is the expected API. No new routes.
-- No `chapter-*` tag on the cart commit — still TypeORM era. Next era tag is `chapter-prisma`.
-- Cart split committed as `5b5f91f`; later `BACKEND-REFERENCE.md` commits on `main`.
-- `GET /cart` folded: `Cart.getOrCreateGuestWithItems()` with `relations: { items: { product: true } }`, return `cart.items`. Writes still use thin `getOrCreateGuest()`. HTTP body still a cart-item array. Verified via `yarn tsx`: cart id 1, 2 items, nested product title on sample.
+- Cart ERD: **Cart 1 — * CartItem * — 1 Product**. Tables `carts`, `cart_items`, `products`. Unique `(cartId, productId)`. `synchronize: false`.
+- Cart split committed earlier as `5b5f91f`. No `chapter-*` tag (still TypeORM era).
+- `GET /cart` folded into one find: `Cart.getOrCreateGuestWithItems()` with `relations: { items: { product: true } }`; service returns `cart.items`. Writes still use thin `getOrCreateGuest()` then `CartItem.listForCart`.
+- Verified via `yarn tsx` (with `dotenv/config`): cart id `1`, `itemCount: 2`, sample nested `productTitle: "Alpine Breeze Bamboo Cutting Board"`. TypeORM log showed JOIN of `carts` → `cart_items` → `products`.
+- Committed on `main` as `f35436e` — “Refactor cart handling to optimize guest cart retrieval” (model, service, CHANGELOG, LEARNING, BACKEND-REFERENCE, MENTOR-BRIEFING, HANDOFF).
+- `MENTOR-BRIEFING.md` at repo root: finished-work tone, ASCII ERD with all product columns, concepts + next.
+- Docs: why no client `cartId` on add; `GET /cart` = my guest cart (not list-all); later identity = token → user → cart. User agreed: cart identity depends on user token when auth lands.
+- Cursor canvas `mentor-briefing.canvas.tsx` was created under the IDE canvases folder (Publish for team share). Not required for resume.
+
+## In progress
+
+- Branch: `main` (tracks `origin/main`). Was clean at `f35436e` before this handoff rewrite.
+- `HANDOFF.md` just updated (uncommitted) for a fresh session.
+
 ## Files
 
-- `models/cart.model.ts` — `getOrCreateGuest` (header); `getOrCreateGuestWithItems` (nested items.product)
-- `models/cart-item.model.ts` — add/remove/clear/list; `@ManyToOne` cart + product
+- `models/cart.model.ts` — `getOrCreateGuest()`; `getOrCreateGuestWithItems()`
+- `models/cart-item.model.ts` — add/remove/clear/`listForCart`; FKs to cart + product
 - `models/product.model.ts` — `cartItems` inverse only
-- `services/cart.service.ts` — GET uses WithItems; mutations still listForCart after write
-- `utils/database.utils.ts` — entities `[Product, Cart, CartItem]`; MySQL DataSource
-- `MENTOR-BRIEFING.md` — mentor summary + ASCII ERD
-- `BACKEND-REFERENCE.md` + `~/.cursor/skills/backend-learning-reference/BACKEND-REFERENCE.md`
-- `.cursor/rules/chapter-releases.mdc` — skip tag unless new era
+- `services/cart.service.ts` — GET uses WithItems; mutations still list after write
+- `MENTOR-BRIEFING.md` — mentor summary + full-field ASCII ERD
+- `BACKEND-REFERENCE.md` (+ skill copy) — nested relations, guest vs token cart, no client `cartId`
+- `LEARNING.md` / `CHANGELOG.md` — nested GET entry under Unreleased
+- `HANDOFF.md` — this file
 
 ## Decisions
 
-- ERD: **Cart 1 — * CartItem * — 1 Product**. Rejected `cartId` on `products`.
-- One **active** cart per user is a business rule; no `users` table until auth. Today: one guest `carts` row.
-- `productId` stays on the **item** (and on `POST/DELETE /cart/items` body).
-- Unique is `(cartId, productId)`, not global `productId`.
-- No GitHub Release / `chapter-*` tag until a new persistence era.
-- **Postgres** lives in `BACKEND-REFERENCE.md` Drafts → What’s next (and Inbox), not on this handoff Next list.
-- Nested GET load keeps response as `CartItem[]` (not wrap in a cart object).
+- Guest cart: server resolves cart (`getOrCreateGuest*`); client sends only `productId` on add/remove.
+- `GET /cart` is “my cart,” not `GET /carts`. With auth: still usually `GET /cart` by user, not client-supplied cart id.
+- Nested GET keeps HTTP as `CartItem[]` (not wrap in a cart object).
+- `items` is the TypeORM relation name → table `cart_items` (not a table named items; not products).
+- Full `product: true` for learning; nested `select` (with PKs) later if payload size matters.
+- No Prisma / `chapter-prisma` until a new persistence era. Postgres stays in BACKEND-REFERENCE Drafts.
 
 ## Constraints
 
@@ -49,11 +49,10 @@ TypeORM cart chapter is finished: guest `Cart` + `CartItem` lines pointing at pr
 
 ## Blocked / open
 
-- Pass 2 (`users` + `carts.userId`) not requested.
-- `BACKEND-REFERENCE.md` inbox may still have a duplicated “Cart as an array vs CartItem rows” block (cosmetic).
+- None.
 
 ## Next
 
-1. Learning roadmap (list APIs, i18n, Postgres, Prisma, …) — see `BACKEND-REFERENCE.md` → Drafts → What’s next; pick when asked.
-2. Prisma era when they want it: branch `learn/prisma`, rewrite `models/` + DataSource only; then `chapter-prisma` + Release.
-3. Optional: verify `GET /cart` once via Postman/HTTP after pull.
+1. Pick from learning roadmap in `BACKEND-REFERENCE.md` → Drafts → What’s next (list APIs, i18n, Postgres, Prisma, auth/pass 2, …).
+2. When auth: token → user → active cart (`carts.userId`); keep `GET /cart` / add without client `cartId`.
+3. Prisma era when chosen: branch `learn/prisma`, rewrite models + DataSource only; then `chapter-prisma` + Release.
