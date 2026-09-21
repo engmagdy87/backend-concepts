@@ -18,21 +18,15 @@ TypeORM cart chapter is finished: guest `Cart` + `CartItem` lines pointing at pr
 - User confirmed Postman sidebar (Admin / Shop / Cart) is the expected API. No new routes.
 - No `chapter-*` tag on the cart commit — still TypeORM era. Next era tag is `chapter-prisma`.
 - Cart split committed as `5b5f91f`; later `BACKEND-REFERENCE.md` commits on `main`.
-
-## In progress
-
-- Branch: `main` (tracks `origin/main`). Working tree may have this turn’s doc edits (`BACKEND-REFERENCE.md` + handoff Postgres moved to Drafts).
-- `getCartService` still: `Cart.getOrCreateGuest()` then `CartItem.listForCart(cart.id)` — two queries. Guest find has no `relations`. Explained; user has not asked to fold into `cart.items`.
-- Guest DB row state not re-checked this session.
-
+- `GET /cart` folded: `Cart.getOrCreateGuestWithItems()` with `relations: { items: { product: true } }`, return `cart.items`. Writes still use thin `getOrCreateGuest()`. HTTP body still a cart-item array. Verified via `yarn tsx`: cart id 1, 2 items, nested product title on sample.
 ## Files
 
-- `models/cart.model.ts` — guest `Cart` header; `getOrCreateGuest` (`find({ take: 1 })`)
+- `models/cart.model.ts` — `getOrCreateGuest` (header); `getOrCreateGuestWithItems` (nested items.product)
 - `models/cart-item.model.ts` — add/remove/clear/list; `@ManyToOne` cart + product
 - `models/product.model.ts` — `cartItems` inverse only
-- `services/cart.service.ts` — published check then guest cart + items
+- `services/cart.service.ts` — GET uses WithItems; mutations still listForCart after write
 - `utils/database.utils.ts` — entities `[Product, Cart, CartItem]`; MySQL DataSource
-- `postman/backend-concepts.postman_collection.json` — cart notes; `{{productId}}`
+- `MENTOR-BRIEFING.md` — mentor summary + ASCII ERD
 - `BACKEND-REFERENCE.md` + `~/.cursor/skills/backend-learning-reference/BACKEND-REFERENCE.md`
 - `.cursor/rules/chapter-releases.mdc` — skip tag unless new era
 
@@ -44,6 +38,7 @@ TypeORM cart chapter is finished: guest `Cart` + `CartItem` lines pointing at pr
 - Unique is `(cartId, productId)`, not global `productId`.
 - No GitHub Release / `chapter-*` tag until a new persistence era.
 - **Postgres** lives in `BACKEND-REFERENCE.md` Drafts → What’s next (and Inbox), not on this handoff Next list.
+- Nested GET load keeps response as `CartItem[]` (not wrap in a cart object).
 
 ## Constraints
 
@@ -55,11 +50,10 @@ TypeORM cart chapter is finished: guest `Cart` + `CartItem` lines pointing at pr
 ## Blocked / open
 
 - Pass 2 (`users` + `carts.userId`) not requested.
-- Optional GET improvement: load `relations: { items: { product: true } }` and return `cart.items` instead of `listForCart`.
 - `BACKEND-REFERENCE.md` inbox may still have a duplicated “Cart as an array vs CartItem rows” block (cosmetic).
 
 ## Next
 
-1. Optional TypeORM polish only if asked: fold GET cart into `relations: { items: { product: true } }` on the guest cart.
-2. Learning roadmap (list APIs, i18n, Postgres, Prisma, …) — see `BACKEND-REFERENCE.md` → Drafts → What’s next; pick when asked.
-3. Prisma era when they want it: branch `learn/prisma`, rewrite `models/` + DataSource only; then `chapter-prisma` + Release.
+1. Learning roadmap (list APIs, i18n, Postgres, Prisma, …) — see `BACKEND-REFERENCE.md` → Drafts → What’s next; pick when asked.
+2. Prisma era when they want it: branch `learn/prisma`, rewrite `models/` + DataSource only; then `chapter-prisma` + Release.
+3. Optional: verify `GET /cart` once via Postman/HTTP after pull.

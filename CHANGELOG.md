@@ -19,6 +19,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `POST /admin/delete-product` returns `404` when no MySQL row matches
 
 ### Changed
+- `GET /cart` loads the guest cart with nested `items.product` in one TypeORM find (same JSON array response)
 - Cart is a header (`carts`) plus items (`cart_items` with `cartId`). `GET /cart` loads each item’s `product`. Same `/cart` routes.
 - `GET /cart` (and add/remove/clear responses) include the cart line `id`
 - Cart persistence is TypeORM on `cart_items` (find then increment or insert; remove/clear/get use the same repository). Leftover mysql2 `db.execute` removed.

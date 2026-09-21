@@ -4,6 +4,11 @@ Notes on backend concepts practiced in this repo. Newest entries first.
 
 Update this file when a feature teaches a concept worth keeping. Skip chores, formatting-only changes, and WIP commits.
 
+## 2026-09-22 — Nested relations vs a second list query
+
+- `GET /cart` used `getOrCreateGuest` then `listForCart` (two round-trips). Same lines in one find: `relations: { items: { product: true } }` on the cart, return `cart.items`.
+- Keep a thin `getOrCreateGuest` for writes — no need to JOIN lines before add/remove/clear. Nested load is for read.
+
 ## 2026-09-20 — Cart vs cart item (relation follows the FK)
 
 - A cart is the basket. A cart item is one `{ product, quantity }` row. `@ManyToOne` sits on the item (`cartId`, `productId`); Product does not belong to a cart.

@@ -72,7 +72,8 @@ Canonical copy also lives at `~/.cursor/skills/backend-learning-reference/BACKEN
 - Pick the method first: `findOneBy({ id })` for one row by columns; `find({ where })` for a list (and for `take` / `order` / `relations`). `find()` with no options is `SELECT *`.
 - Inside `find({ ... })` think SQL: **`where`** (which rows) → **`order`** (sort) → **`skip` / `take`** (OFFSET / LIMIT) → **`relations`** (JOIN). Key order in the object does not matter; that sequence is how you read it.
 - Writes stay as already practiced: `save` (insert/update an instance), `update(id, fields)`, `remove(entity)`, `delete(criteria)`.
-- `@OneToMany items` is empty until you load it. `getOrCreateGuest` today is only the cart row (`take: 1`). `listForCart` is a second query. Same list from the cart: `find({ take: 1, relations: { items: { product: true } } })` then `cart.items`.
+- `@OneToMany items` is empty until you load it. Guest **writes** use `getOrCreateGuest()` (header only). **GET** uses `getOrCreateGuestWithItems()` — `find({ take: 1, relations: { items: { product: true } } })` then `cart.items` (one round-trip; same item array on the wire).
+- **Why teach two queries first:** the chapter goal was Cart vs CartItem, FKs, and `relations: { product: true }` on the *line*. Nested `items: { product: true }` on the cart is the same JOIN idea one hop up — optional polish, not required for correct HTTP. Mention it as “same result, fewer round-trips” after the split model is solid; do not pile it into the first cart pass.
 
 ### 2026-09-22 — Migrations: when you need them
 
@@ -110,6 +111,9 @@ Canonical copy also lives at `~/.cursor/skills/backend-learning-reference/BACKEN
 - **Line** = one row on the receipt (“2× Book”). Same thing as `CartItem` / `cart_items`. Not a special TypeORM word.
 - This repo today collapsed that into one table of lines named `Cart`. That is why the decorators felt backwards. A `carts` table is a new model, not a rename of `cart_items`.
 - Keep HTTP as one guest cart (`GET /cart`, `POST /cart/items` `{ productId }`). Until auth, there is one `carts` row. `productId` stays on the cart item (and in the request body); it does not move onto Product.
+- **Why no `cartId` on add:** the server picks the cart (`getOrCreateGuest`), then writes `cart_items.cartId` itself. Letting the client send `cartId` would mean “add to any basket” — wrong for a shop, dangerous once you have many carts. Do: resolve “whose cart?” from guest/session/user. Don’t: trust a client-supplied cart id unless it’s an admin tool.
+- **`GET /cart` is not “all carts”:** it is “**my** (guest) cart” — one resource, like `GET /me`. `take: 1` / find-or-create is intentional while there is only a guest. Industry default with login: still usually `GET /cart` (current user’s active cart), not `GET /carts` then pick. `GET /carts/:id` appears when you manage many carts (admin, history). Pass 2: resolve by `userId`, still one “current” cart for the shop UI.
+
 - Typical picture with login: one **active** cart per user. That is a business rule, not “never more than one cart row.” History of abandoned carts is optional; checkout usually becomes an **order**, not a second living cart. This repo has no `users` table yet.
 - Refactor in two passes, `synchronize` still **false**. Pass 1: `CREATE TABLE carts`, `ALTER cart_items ADD cartId`, rename class `Cart` → `CartItem`, real `Cart` with `items`, Product `cartItems` (not `cart`). Guest cart = one row; service find-or-create; add/remove scoped to that cart; drop `Product.cart` / `new Cart()`. Pass 2: `users` + `carts.userId` only with auth. Do not add users just to match the ERD picture.
 

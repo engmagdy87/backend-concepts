@@ -23,8 +23,8 @@ export const addToCartService = async (
 };
 
 export const getCartService = async (): Promise<CartItem[]> => {
-  const cart = await Cart.getOrCreateGuest();
-  return CartItem.listForCart(cart.id);
+  const cart = await Cart.getOrCreateGuestWithItems();
+  return cart.items ?? [];
 };
 
 export const removeFromCartService = async (
