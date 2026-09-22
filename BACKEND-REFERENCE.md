@@ -8,6 +8,37 @@ Canonical copy also lives at `~/.cursor/skills/backend-learning-reference/BACKEN
 
 ## Inbox
 
+### 2026-09-22 — Onboarding assistant ERD (definition / instance / conversation)
+
+- Sketch only, outside this shop. Three lifecycles: **definition** (`OnboardingFlow` + `OnboardingStep`), **instance** (`OnboardingRun` + `StepProgress`), **conversation** (`AssistantThread` + `AssistantMessage` + `AssistantAction`). User stays owned by auth; onboarding stores `userId` only.
+- Pin the run to a **flow version** (`key` + `version`). Editing the script must not rewrite someone already mid-flow. A published flow has at least one step — that is a rule, not something the foot shows.
+- `StepProgress` is an association entity (`runId`, `stepId`, status, `completedAt`), same idea as `CartItem` + quantity. Unique `(runId, stepId)`. One **active** run per user is a partial unique; the foot still says a user has many runs over time.
+- Thread is its own table (zero or one per run) because chat is deleted or retained on a different schedule than checklist progress. `stepId` on a message is optional context (`O|`).
+- Starting a run touches flow, steps, run, and progress → service. Marking one step done, alone, stays on the progress model.
+- Options: flags + a message blob on the user (fine for three hardcoded steps); this split (default once product edits the script); append-only events (later, when you must replay). Embeddings and prompt tables stay out of v1.
+
+### 2026-09-22 — Cardinality and optionality (crow’s foot endings)
+
+- Search term: **cardinality and optionality** (also **modality**) in **crow’s foot** / **Information Engineering** notation. Cardinality = one or many. Optionality = required or may be zero.
+- Four endings, read at the entity they touch: `||` exactly one; `O|` zero or one; `|<` one or many; `O<` zero or many.
+- A line uses one ending on each side. Those pairs are the relationship types: one-to-one, one-to-many, many-to-many.
+- A solid vs dashed line is a different question (identifying vs non-identifying): whether the child’s key includes the parent. Not the same as the foot.
+
+### 2026-09-22 — Junction table vs weak entity
+
+- A **junction table** (join / bridge table) sits between two entities in a many-to-many. It stores the pair of foreign keys. Only those two keys = a pure junction. Extra facts on the link (a grade, a quantity, a date) make it an associative entity — same middle table, now with its own columns.
+- A **weak entity** has no identity of its own. Its key includes the owner’s key (or is unique only inside that owner). Delete the owner and the child goes too. A child of one parent (order line, employee dependent) is weak and is not a junction.
+- A junction row is often weak, because the pair of foreign keys *is* its identity. Give it a surrogate id and it can look strong in the database while the business still treats it as dependent.
+- SQL default for many-to-many is the junction table. A JSON list of ids skips the table and also skips foreign-key checks.
+
+### 2026-09-22 — ERD is the diagram; crow’s foot is the line style
+
+- An **ERD** (entity-relationship diagram) is the picture: boxes = entities/tables, lines = how they connect, columns inside the box.
+- **Crow’s foot** is one way to draw those lines. The foot (`*`, three prongs) means many; a bar means one. Full form also marks optional (`O`, zero allowed) vs mandatory (`|`).
+- Other line styles: Chen (diamonds, 1/N — courses), UML (`1..*`, classes), IDEF1X (formal keys — later). Industry default for SQL tables is crow’s foot.
+- This repo’s cart picture is crow’s foot in text: **Cart 1 — * CartItem * — 1 Product**. `1` = `@ManyToOne` + the FK on the line; `*` = `@OneToMany`. The shorthand drops “may be zero.” A new cart can have zero items; a line must have one product.
+- The diagram is not a second schema. MySQL FKs and TypeORM decorators are the same facts as code. Unique `(cartId, productId)` is a constraint you annotate; the foot alone does not say it.
+
 ### 2026-09-22 — Postgres (when, not how)
 
 - **Postgres** = a different SQL engine, not a different API. Same tables idea (`products`, `carts`, `cart_items`); change is connection + dialect (`pg` peer, `type: "postgres"`, env URL), not new routes.
