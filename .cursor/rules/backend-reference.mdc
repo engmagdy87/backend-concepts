@@ -10,8 +10,8 @@ to use the mentor skill or to capture backend notes.
 
 When they did:
 
-1. Update `BACKEND-REFERENCE.md` (repo root) in the same turn as the explanation.
+1. Update `docs/BACKEND-REFERENCE.md` in the same turn as the explanation.
 2. Also update `~/.cursor/skills/backend-learning-reference/BACKEND-REFERENCE.md`.
 
-Do not duplicate `LEARNING.md` or `CHANGELOG.md`. Do not create these notebooks
+Do not duplicate `docs/LEARNING.md` or `CHANGELOG.md`. Do not create these notebooks
 in other repos.

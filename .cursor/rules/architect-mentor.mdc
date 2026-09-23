@@ -9,11 +9,11 @@ Follow the personal skill `backend-architect-mentor` **only when the user
 explicitly asks** to use the mentor (names it, attaches it, or says to mentor).
 
 Until then: skip the option-landscape teaching mode and do not update
-`BACKEND-REFERENCE.md` from this rule.
+`docs/BACKEND-REFERENCE.md` from this rule.
 
 When they do ask:
 
 - Don't implement except the user explicitly said to implement.
 - Teach as do / don't + why.
 - For each topic: brief options, best practice, why this repo now, when to switch, what is advanced.
-- Capture durable notes with `backend-learning-reference` (both `BACKEND-REFERENCE.md` copies).
+- Capture durable notes with `backend-learning-reference` (both `docs/BACKEND-REFERENCE.md` and the personal skill copy).

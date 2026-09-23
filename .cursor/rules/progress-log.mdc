@@ -7,15 +7,15 @@ alwaysApply: true
 
 Git tracks the working tree. These files are the human-readable history.
 
-- `CHANGELOG.md` — shipped product/API changes (Keep a Changelog)
-- `LEARNING.md` — backend concepts practiced (newest first)
+- `CHANGELOG.md` (repo root) — shipped product/API changes (Keep a Changelog)
+- `docs/LEARNING.md` — backend concepts practiced (newest first)
 
 ## When to update
 
 When a **feature or bugfix is finished**, in the **same commit** as the code:
 
 1. Add bullets under `CHANGELOG.md` → `[Unreleased]` using Added / Changed / Fixed / Removed.
-2. Add a short `LEARNING.md` entry only if a backend concept was practiced. Skip chores.
+2. Add a short `docs/LEARNING.md` entry only if a backend concept was practiced. Skip chores.
 
 Skip both files for WIP, formatting-only, or "just commit this" unless the user asks.
 

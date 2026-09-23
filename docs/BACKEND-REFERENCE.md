@@ -2,7 +2,7 @@
 
 Living mentor notes. Newest inbox first. Fold durable rules into the sections below as they settle.
 
-Canonical copy also lives at `~/.cursor/skills/backend-learning-reference/BACKEND-REFERENCE.md` (personal Cursor skill). Keep both in sync.
+Project copy: `docs/BACKEND-REFERENCE.md`. Canonical long-term copy also lives at `~/.cursor/skills/backend-learning-reference/BACKEND-REFERENCE.md` (personal Cursor skill). Keep both in sync.
 
 ---
 

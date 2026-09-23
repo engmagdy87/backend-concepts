@@ -2,57 +2,60 @@
 
 ## Goal
 
-TypeORM cart chapter finished on MySQL: guest `Cart` + `CartItem` → `Product`, same `/cart` HTTP. Next persistence era (Prisma / Postgres) only when asked. No auth yet.
+Plan basic auth for the shop API (users, signup/login, JWT, guest cart cookie), then keep learning docs tidy. Design only this session — no auth code yet.
 
 ## Done
 
-- Cart ERD: **Cart 1 — * CartItem * — 1 Product**. Tables `carts`, `cart_items`, `products`. Unique `(cartId, productId)`. `synchronize: false`.
-- Cart split committed earlier as `5b5f91f`. No `chapter-*` tag (still TypeORM era).
-- `GET /cart` folded into one find: `Cart.getOrCreateGuestWithItems()` with `relations: { items: { product: true } }`; service returns `cart.items`. Writes still use thin `getOrCreateGuest()` then `CartItem.listForCart`.
-- Verified via `yarn tsx` (with `dotenv/config`): cart id `1`, `itemCount: 2`, sample nested `productTitle: "Alpine Breeze Bamboo Cutting Board"`. TypeORM log showed JOIN of `carts` → `cart_items` → `products`.
-- Committed on `main` as `f35436e` — “Refactor cart handling to optimize guest cart retrieval” (model, service, CHANGELOG, LEARNING, BACKEND-REFERENCE, MENTOR-BRIEFING, HANDOFF).
-- `MENTOR-BRIEFING.md` at repo root: finished-work tone, ASCII ERD with all product columns, concepts + next.
-- Docs: why no client `cartId` on add; `GET /cart` = my guest cart (not list-all); later identity = token → user → cart. User agreed: cart identity depends on user token when auth lands.
-- Cursor canvas `mentor-briefing.canvas.tsx` was created under the IDE canvases folder (Publish for team share). Not required for resume.
+- Mentor discussion locked a suggested path: users table → signup/login + JWT Bearer → `GET /me` → guest cart cookie → then `carts.userId` + merge. Nice-to-haves listed separately (logout/revoke, refresh/session, roles, OAuth, etc.).
+- Wrote `docs/AUTH-PLAN.md` with that plan (must-ship steps + nice-to-have table).
+- Grouped markdown under `docs/`:
+  - Moved: `BACKEND-REFERENCE.md`, `LEARNING.md`, `MENTOR-BRIEFING.md`, `POSTMAN.md`, `AUTH-PLAN.md`
+  - Left at root: `README.md`, `CHANGELOG.md`, `HANDOFF.md`
+- Updated project links/rules: `README.md`, `.cursor/rules/{progress-log,backend-reference,architect-mentor}.mdc`, path note in `docs/BACKEND-REFERENCE.md`
+- Updated personal skills outside the repo: `~/.cursor/skills/backend-architect-mentor/SKILL.md` and `~/.cursor/skills/backend-learning-reference/{SKILL.md,BACKEND-REFERENCE.md}` to prefer `docs/` paths
 
 ## In progress
 
-- Branch: `main` (tracks `origin/main`). Was clean at `f35436e` before this handoff rewrite.
-- `HANDOFF.md` just updated (uncommitted) for a fresh session.
+- Branch: `main` (tracks `origin/main`)
+- HEAD: `cbf2f4e` — “Add .DS_Store to .gitignore”
+- Uncommitted (not committed this session):
+  - Renames into `docs/` (+ new `docs/AUTH-PLAN.md`)
+  - `README.md`, `HANDOFF.md`, three `.cursor/rules/*.mdc`, small header edit in `docs/BACKEND-REFERENCE.md`
+- Auth implementation not started (discussion + plan file only)
 
 ## Files
 
-- `models/cart.model.ts` — `getOrCreateGuest()`; `getOrCreateGuestWithItems()`
-- `models/cart-item.model.ts` — add/remove/clear/`listForCart`; FKs to cart + product
-- `models/product.model.ts` — `cartItems` inverse only
-- `services/cart.service.ts` — GET uses WithItems; mutations still list after write
-- `MENTOR-BRIEFING.md` — mentor summary + full-field ASCII ERD
-- `BACKEND-REFERENCE.md` (+ skill copy) — nested relations, guest vs token cart, no client `cartId`
-- `LEARNING.md` / `CHANGELOG.md` — nested GET entry under Unreleased
-- `HANDOFF.md` — this file
+- `docs/AUTH-PLAN.md` — agreed auth plan (suggested way + steps 1–6 + nice-to-haves)
+- `docs/BACKEND-REFERENCE.md` — mentor notebook (project copy); prior session notes on session/cookie/JWT
+- `docs/LEARNING.md` / `docs/MENTOR-BRIEFING.md` / `docs/POSTMAN.md` — moved under `docs/`
+- `README.md` — links point at `docs/`
+- `.cursor/rules/progress-log.mdc` — `docs/LEARNING.md`
+- `.cursor/rules/backend-reference.mdc` / `architect-mentor.mdc` — `docs/BACKEND-REFERENCE.md`
+- `HANDOFF.md` — this file (stays at repo root)
+- `CHANGELOG.md` — stays at repo root (unchanged this session)
+- Code tree (`models/`, `routes/`, `services/`) — unchanged; still guest cart, no users
 
 ## Decisions
 
-- Guest cart: server resolves cart (`getOrCreateGuest*`); client sends only `productId` on add/remove.
-- `GET /cart` is “my cart,” not `GET /carts`. With auth: still usually `GET /cart` by user, not client-supplied cart id.
-- Nested GET keeps HTTP as `CartItem[]` (not wrap in a cart object).
-- `items` is the TypeORM relation name → table `cart_items` (not a table named items; not products).
-- Full `product: true` for learning; nested `select` (with PKs) later if payload size matters.
-- No Prisma / `chapter-prisma` until a new persistence era. Postgres stays in BACKEND-REFERENCE Drafts.
+- v1 auth: JWT in `Authorization` (Postman-friendly), not session cookie first.
+- Guest cart needs a cookie (or guest session) for identity; full auth session store is not required just for guests.
+- Session + access JWT together only later if you need revoke/refresh — not for the first cut.
+- Do not wire `carts.userId` / merge in the same first pass as signup/login/`GET /me`.
+- Docs layout: root = README + CHANGELOG + HANDOFF; everything else under flat `docs/` (no subfolders).
 
 ## Constraints
 
 - Architect-mentor: don’t implement unless asked.
 - Commit only when asked. Don’t force-push. Don’t retag `chapter-typeorm`.
-- Don’t run TypeORM and Prisma on the same tables.
 - `synchronize` stays `false`.
+- Don’t run TypeORM and Prisma on the same tables.
 
 ## Blocked / open
 
-- None.
+- None. Awaiting user to start implementing auth (or commit the docs move).
 
 ## Next
 
-1. Pick from learning roadmap in `BACKEND-REFERENCE.md` → Drafts → What’s next (list APIs, i18n, Postgres, Prisma, auth/pass 2, …).
-2. When auth: token → user → active cart (`carts.userId`); keep `GET /cart` / add without client `cartId`.
-3. Prisma era when chosen: branch `learn/prisma`, rewrite models + DataSource only; then `chapter-prisma` + Release.
+1. Commit the `docs/` reorg + `AUTH-PLAN.md` when the user asks.
+2. Implement auth plan steps 1–3: `users` table, signup/login + JWT, `GET /me` (+ middleware).
+3. Then guest cart cookie; then `carts.userId` + merge on login (plan steps 4–5).

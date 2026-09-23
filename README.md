@@ -3,10 +3,12 @@
 Express and TypeScript backend learning project. Products and the cart live in MySQL (admin = full catalog, shop = published only). The cart is one guest basket (`carts`) plus items (`cart_items`).
 
 - [Changelog](CHANGELOG.md) — shipped API and product changes
-- [Learning log](LEARNING.md) — backend concepts practiced here
-- [Backend reference](BACKEND-REFERENCE.md) — durable mentor notes (naming, layers, drafts) for later projects
+- [Learning log](docs/LEARNING.md) — backend concepts practiced here
+- [Backend reference](docs/BACKEND-REFERENCE.md) — durable mentor notes (naming, layers, drafts) for later projects
+- [Auth plan](docs/AUTH-PLAN.md) — signup/login, JWT, guest cart cookie (planned)
 - [Postman collection](postman/backend-concepts.postman_collection.json) — import into Postman (`baseUrl` = `http://localhost:3040`). When the API changes, update this file and sync it to Postman (MCP).
-- [Postman notes](POSTMAN.md) — body types, environments, Share value vs Invite, Scripts → After response
+- [Postman notes](docs/POSTMAN.md) — body types, environments, Share value vs Invite, Scripts → After response
+- [Mentor briefing](docs/MENTOR-BRIEFING.md) — cart chapter snapshot
 
 ## Setup
 
@@ -112,6 +114,8 @@ services/                   # Use-case glue (cart ↔ product)
 models/                     # Product / Cart / CartItem domain + persistence
 types/                      # Shared input / record types
 utils/                      # DataSource, number helpers
+docs/                       # Learning notes, plans, Postman guide (not API runtime)
+CHANGELOG.md / HANDOFF.md   # Stay at repo root (changelog + session handoff)
 ```
 
 ```mermaid
