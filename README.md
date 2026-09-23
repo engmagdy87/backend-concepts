@@ -6,6 +6,7 @@ Express and TypeScript backend learning project. Products and the cart live in M
 - [Learning log](LEARNING.md) — backend concepts practiced here
 - [Backend reference](BACKEND-REFERENCE.md) — durable mentor notes (naming, layers, drafts) for later projects
 - [Postman collection](postman/backend-concepts.postman_collection.json) — import into Postman (`baseUrl` = `http://localhost:3040`). When the API changes, update this file and sync it to Postman (MCP).
+- [Postman notes](POSTMAN.md) — body types, environments, Share value vs Invite, Scripts → After response
 
 ## Setup
 
