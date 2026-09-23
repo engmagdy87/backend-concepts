@@ -8,6 +8,14 @@ Canonical copy also lives at `~/.cursor/skills/backend-learning-reference/BACKEN
 
 ## Inbox
 
+### 2026-09-22 — Cookie: server sets it, the browser sends it back
+
+- The backend does not pass a cookie to React as JSON. It writes `Set-Cookie` on the response. The browser stores it and attaches `Cookie` on later requests to that site. JavaScript only sees the value when the cookie is **not** `HttpOnly`.
+- Industry: login session (opaque id in a server store, or a JWT) with `HttpOnly` + `Secure` + `SameSite`; guest-cart id so two browsers are two baskets; CSRF double-submit (readable cookie plus a header); non-secrets such as locale, consent, experiments; load-balancer stickiness (infra, not app logic).
+- Options: server session + opaque cookie (default for a browser shop); JWT in an HttpOnly cookie (no server lookup, harder to revoke); `Authorization: Bearer` (mobile, CLI, and SPAs that cannot rely on the cookie jar); a readable cookie only for data that is not a secret.
+- This repo: no cookie yet. `Cart.getOrCreateGuest()` is one shared row for every caller. A guest cookie is how “whose cart?” works before `carts.userId`. Still do not trust a client-sent `cartId`.
+- Do: set the session with `httpOnly`. The page calls `fetch` with `credentials: 'include'` and leaves the cookie in the browser. Don’t: put a login token in `localStorage` or a JS-readable cookie — XSS can steal it.
+
 ### 2026-09-22 — Onboarding assistant ERD (definition / instance / conversation)
 
 - Sketch only, outside this shop. Three lifecycles: **definition** (`OnboardingFlow` + `OnboardingStep`), **instance** (`OnboardingRun` + `StepProgress`), **conversation** (`AssistantThread` + `AssistantMessage` + `AssistantAction`). User stays owned by auth; onboarding stores `userId` only.
@@ -568,7 +576,7 @@ Ideas not implemented, or “next when ready”:
 - [ ] **Postgres** — same HTTP; swap engine (`pg` + DataSource `type: "postgres"`, or as the DB under Prisma). Not a new chapter tag by itself unless you treat it as its own era
 - [ ] **Migrations** — versioned schema files you run on purpose (TypeORM migrate CLI, or Prisma `migrate`). Same job as hand `CREATE`/`ALTER`; adopt when you switch DB, wipe/rebuild often, or enter Prisma. Keep `synchronize: false`
 - [ ] **Prisma era** (`chapter-prisma`): when TypeORM CRUD + one relation feels enough — keep routes; swap `models/` + DataSource only
-- [ ] Auth / `carts.userId` (pass 2) when you want users, not before
+- [ ] Auth / `carts.userId` (pass 2) when you want users, not before. Until then, a guest cookie is how two browsers get two carts; login stays `Set-Cookie` (`HttpOnly`) for the browser and `Authorization: Bearer` for mobile/CLI
 - [ ] Nest (or similar) only when the Express layers feel boring — not the next step after cart
 
 ### Smaller / REST polish
