@@ -8,6 +8,29 @@ Canonical copy also lives at `~/.cursor/skills/backend-learning-reference/BACKEN
 
 ## Inbox
 
+### 2026-09-23 — Boolean `0`/`1` vs `true`/`false` is not every DB
+
+- Wire shape depends on **database + driver**, not a universal SQL rule. Do not assume every store needs a loop that turns `0`/`1` into booleans.
+- **MySQL / MariaDB:** `BOOLEAN` is `TINYINT(1)`. Raw `mysql2` often returns `0`/`1`. Map in the model (`Boolean(row.isPublished)`) so API JSON is real `true`/`false`.
+- **PostgreSQL:** real `boolean`; drivers usually give JS booleans already.
+- **SQLite:** no native boolean (stores `0`/`1`); drivers/ORMs usually coerce.
+- **SQL Server:** `BIT` (`0`/`1`/`NULL`); drivers often coerce to boolean.
+- **TypeORM / Prisma:** column type ↔ JS boolean is mapped for you. Manual `Boolean(...)` showed up with raw `mysql2`, not because “all databases” work that way.
+
+### 2026-09-23 — How the backend uses a session
+
+- Flow: login (or first visit) → create a session record on the server → `Set-Cookie` with only the id → on later requests, middleware reads the cookie, loads that record, puts it on `req` (e.g. `req.session` / `req.user`). Controllers never trust the body for “who am I?”
+- **Redis check (industry shape):** sessions live in Redis. Browser sends the session id in the cookie (`Cookie: sid=abc123`). Server looks up that id in Redis. Found + has `userId` (still active, often via TTL) → continue. Missing / expired → 401, need login. Redis does not “know users”; finding the record `{ userId: 5 }` *is* the validation. Logout = delete that key.
+- Store options: process memory (fine for learning, dies on restart); Redis/DB (industry default once you have more than one server or care about logout). JWT-in-cookie is the “no server session table” path.
+- Public routes (e.g. `GET /products`) skip the check. Protected routes require a live session.
+- This repo: no session yet. When auth/guest identity lands, session (or guest cookie) answers “whose cart?” — same idea as today’s `getOrCreateGuest`, keyed properly.
+
+### 2026-09-23 — Cookie vs session
+
+- A **cookie** lives in the browser (small key=value, sent on later requests). A **session** lives on the server (the real “this person is logged in / this is cart 7” record).
+- Classic pair: cookie holds only an id (`sid=abc`); server looks up session `abc`. The cookie is the key; the session is the lockbox.
+- Cookie alone is fine for non-secrets (locale). Session alone needs some client proof — cookie for browsers, `Authorization` for mobile.
+
 ### 2026-09-22 — Cookie: server sets it, the browser sends it back
 
 - The backend does not pass a cookie to React as JSON. It writes `Set-Cookie` on the response. The browser stores it and attaches `Cookie` on later requests to that site. JavaScript only sees the value when the cookie is **not** `HttpOnly`.
