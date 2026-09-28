@@ -1,10 +1,6 @@
 import { Request, Response } from "express";
 import User from "../models/user.model";
-import {
-  USER_REQUIRED_FIELDS,
-  type UserInput,
-  type DeleteUserBody,
-} from "../types/user.types";
+import { USER_REQUIRED_FIELDS, type UserInput } from "../types/user.types";
 import { parseId } from "../utils/number.utils";
 import { createUserService, updateUserService } from "../services/user.service";
 import { findMissingFields } from "../utils/validation.utils";
@@ -65,10 +61,10 @@ export const updateUser = async (
 };
 
 export const deleteUser = async (
-  req: Request<unknown, unknown, DeleteUserBody>,
+  req: Request<{ id: string }, unknown, unknown>,
   res: Response,
 ) => {
-  const parsedId = parseId(req.body?.id ?? "");
+  const parsedId = parseId(req.params.id);
 
   if (parsedId === null) {
     return res.status(400).json({

@@ -4,6 +4,13 @@ Notes on backend concepts practiced in this repo. Newest entries first.
 
 Update this file when a feature teaches a concept worth keeping. Skip chores, formatting-only changes, and WIP commits.
 
+## 2026-09-28 — Resource id in the path, not the body
+
+- The URL names the resource; the method names the action. `DELETE /admin/delete-product/:id` matches `GET` / `PUT /products/:id`, so the id always lives in the same place.
+- A body on `DELETE` has no defined meaning in HTTP. Some clients, proxies, and caches drop it, so an id sent there can silently disappear.
+- Path params are strings (`req.params.id`), so `parseId` still returns `400` for `abc` or `-1`. No body also means no `req.body?.` guard.
+- Authorization (plan step 6): "logged in" is not "allowed". Public signup means any user could reach `/admin`, so a role check (`403`) must come with locking it, not later.
+
 ## 2026-09-28 — One create path for admin and signup
 
 - "Email must be unique" is a user rule, not a route rule. Admin add-user and signup both call `createUserService` (check email → hash → save), so there is one check, not two.

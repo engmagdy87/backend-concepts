@@ -20,11 +20,11 @@ router.get("/products", fetchProducts);
 router.get("/products/:id", fetchProductById);
 router.put("/products/:id", updateProduct);
 router.post("/add-product", addProduct);
-router.post("/delete-product", deleteProduct);
+router.delete("/delete-product/:id", deleteProduct);
 
 router.post("/add-user", addUser);
 router.put("/update-user/:id", updateUser);
-router.delete("/delete-user", deleteUser);
+router.delete("/delete-user/:id", deleteUser);
 router.get("/users", fetchUsers);
 router.get("/users/:id", fetchUserById);
 

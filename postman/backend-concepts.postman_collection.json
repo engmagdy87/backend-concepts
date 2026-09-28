@@ -109,23 +109,10 @@
           "id": "a71b6de6-cc75-4da8-a7cf-a7a033318faf",
           "name": "Delete product",
           "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"id\": 1\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": "{{baseUrl}}/admin/delete-product"
+            "method": "DELETE",
+            "header": [],
+            "description": "400 if the id is not a positive integer. 404 if the product does not exist.",
+            "url": "{{baseUrl}}/admin/delete-product/{{productId}}"
           }
         }
       ]
@@ -313,23 +300,9 @@
           "name": "Delete user",
           "request": {
             "method": "DELETE",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"id\": {{userId}}\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "description": "404 if the user does not exist.",
-            "url": "{{baseUrl}}/admin/delete-user"
+            "header": [],
+            "description": "400 if the id is not a positive integer. 404 if the user does not exist.",
+            "url": "{{baseUrl}}/admin/delete-user/{{userId}}"
           }
         }
       ]

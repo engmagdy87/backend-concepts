@@ -18,7 +18,7 @@ Basic auth + guest cart for this shop API. Implement in order. Skip nice-to-have
 | Stage | Tag | Plan steps | Status |
 | --- | --- | --- | --- |
 | Users + signup/login | `chapter-auth-users` | 1, 2 (without JWT) | Done |
-| JWT + `GET /me` + lock `/admin` | `chapter-auth-jwt` | 2 (JWT), 3, 6 | Next |
+| JWT + `GET /me` + roles + lock `/admin` | `chapter-auth-jwt` | 2 (JWT), 3, 6 | Next |
 | Guest cart cookie + cart per user | `chapter-auth-cart` | 4, 5 | Later |
 
 ---
@@ -59,7 +59,14 @@ Basic auth + guest cart for this shop API. Implement in order. Skip nice-to-have
 ### 6. Protect what needs it
 
 - [ ] Start with `GET /me`
-- [ ] Then lock `/admin` so only a logged-in user (role later if you want)
+- [ ] Add `users.role` (`'customer' | 'admin'`, default `'customer'`) — manual SQL (`synchronize: false`)
+- [ ] Signup and admin add-user never set `role` from the body (constructor copies fields explicitly — keep it)
+- [ ] Create the first admin by hand in SQL, not through an API
+- [ ] `requireAdmin` middleware after the auth middleware: no/bad token → **401**, valid token but not admin → **403**
+- [ ] Lock the whole router in one place: `app.use("/admin", requireAuth, requireAdmin, adminRoutes)`
+- [ ] Decide where `role` is read: from the JWT (stale until expiry — keep expiry short) or from the DB on each admin request
+
+Why roles are here and not "later": signup is public, so "any logged-in user" means anyone can sign up and manage users/products.
 
 ---
 
@@ -71,7 +78,6 @@ Basic auth + guest cart for this shop API. Implement in order. Skip nice-to-have
 | **Refresh token / server session** | Short access JWT + revoke / “logout all devices” |
 | **Session cookie instead of JWT** | Better browser-shop default once you care about cookies + logout |
 | **Password reset / email verify** | Real product; extra tables + mail |
-| **Roles** (`admin` vs `customer`) | When admin must not be “any logged-in user” |
 | **Guest → user cart merge rules** | Same product lines, quantities — do after basic attach works |
 | **Redis for sessions** | Multi-server / serious revoke — overkill while one process |
 | **OAuth (Google, etc.)** | After email/password is solid |
@@ -82,6 +88,6 @@ Basic auth + guest cart for this shop API. Implement in order. Skip nice-to-have
 
 ## One-line summary
 
-**Must ship:** users → signup/login + JWT → `GET /me` → guest cart cookie → then `carts.userId` + merge.
+**Must ship:** users → signup/login + JWT → `GET /me` → roles + lock `/admin` → guest cart cookie → then `carts.userId` + merge.
 
-**Nice later:** logout/revoke, refresh or full sessions, roles, reset/verify, OAuth, CSRF (cookie auth), XSS (frontend + readable tokens).
+**Nice later:** logout/revoke, refresh or full sessions, reset/verify, OAuth, CSRF (cookie auth), XSS (frontend + readable tokens).

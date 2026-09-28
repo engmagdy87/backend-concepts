@@ -24,6 +24,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `POST /admin/delete-product` returns `404` when no MySQL row matches
 
 ### Changed
+- Delete takes the id in the URL, no JSON body: `DELETE /admin/delete-product/:id` (was `POST /admin/delete-product`) and `DELETE /admin/delete-user/:id` (was `DELETE /admin/delete-user`)
 - `parseId` moved from `Product` to `utils/number.utils.ts` (shared by products, cart, and users)
 - `GET /cart` loads the guest cart with nested `items.product` in one TypeORM find (same JSON array response)
 - Cart is a header (`carts`) plus items (`cart_items` with `cartId`). `GET /cart` loads each item’s `product`. Same `/cart` routes.

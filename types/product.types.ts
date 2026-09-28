@@ -8,7 +8,3 @@ export interface ProductInput {
 
 /** Clients may send a number or a numeric string. */
 export type ProductIdInput = number | string;
-
-export interface DeleteProductBody {
-  id: ProductIdInput;
-}

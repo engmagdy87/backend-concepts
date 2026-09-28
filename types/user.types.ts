@@ -20,10 +20,6 @@ export interface UserOutput extends Omit<UserInput, "password"> {
 /** Clients may send a number or a numeric string. */
 export type UserIdInput = number | string;
 
-export interface DeleteUserBody {
-  id: UserIdInput;
-}
-
 export type UpdateUserResult =
   | { status: "ok"; user: UserOutput }
   | { status: "not_found" }
