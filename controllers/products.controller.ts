@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import Product from "../models/product.model";
 import type { DeleteProductBody, ProductInput } from "../types/product.types";
+import { parseId } from "../utils/number.utils";
 
 export const addProduct = async (
   req: Request<unknown, unknown, ProductInput>,
@@ -19,7 +20,7 @@ export const updateProduct = async (
   req: Request<{ id: string }, unknown, ProductInput>,
   res: Response,
 ) => {
-  const parsedId = Product.parseId(req.params.id);
+  const parsedId = parseId(req.params.id);
 
   if (parsedId === null) {
     return res.status(400).json({
@@ -42,7 +43,7 @@ export const deleteProduct = async (
   req: Request<unknown, unknown, DeleteProductBody>,
   res: Response,
 ) => {
-  const parsedId = Product.parseId(req.body.id);
+  const parsedId = parseId(req.body.id);
 
   if (parsedId === null) {
     return res.status(400).json({

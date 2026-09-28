@@ -7,6 +7,7 @@ import AppDataSource from "./utils/database.utils";
 import adminRoutes from "./routes/admin.route";
 import shopRoutes from "./routes/shop.route";
 import cartRoutes from "./routes/cart.route";
+import authRoutes from "./routes/auth.route";
 
 const app = express();
 
@@ -16,6 +17,7 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use("/admin", adminRoutes);
 app.use("/shop", shopRoutes);
 app.use("/cart", cartRoutes);
+app.use("/auth", authRoutes);
 
 app.use((_req, res) => {
   res.status(404).json({

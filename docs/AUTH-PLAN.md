@@ -63,7 +63,8 @@ Basic auth + guest cart for this shop API. Implement in order. Skip nice-to-have
 | **Guest → user cart merge rules** | Same product lines, quantities — do after basic attach works |
 | **Redis for sessions** | Multi-server / serious revoke — overkill while one process |
 | **OAuth (Google, etc.)** | After email/password is solid |
-| **CSRF** | Matters more with cookie-based auth on browsers |
+| **CSRF** | When login (or cart) proof is a cookie the browser auto-sends — e.g. session cookie, or a real browser FE. Less urgent while auth is Bearer JWT in Postman. Use `SameSite` on cookies first; add a CSRF token/library when cookie auth is live. |
+| **XSS** | When a real frontend holds a JWT JS can read (`localStorage` / non-`HttpOnly` cookie). Bad script on *your* site can steal the token and call the API as the user. Prefer short-lived tokens; avoid storing access tokens where JS can read them if you can; sanitize rendered content. Bigger concern than CSRF for the Bearer-JWT path. |
 
 ---
 
@@ -71,4 +72,4 @@ Basic auth + guest cart for this shop API. Implement in order. Skip nice-to-have
 
 **Must ship:** users → signup/login + JWT → `GET /me` → guest cart cookie → then `carts.userId` + merge.
 
-**Nice later:** logout/revoke, refresh or full sessions, roles, reset/verify, OAuth.
+**Nice later:** logout/revoke, refresh or full sessions, roles, reset/verify, OAuth, CSRF (cookie auth), XSS (frontend + readable tokens).

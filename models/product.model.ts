@@ -1,7 +1,7 @@
 import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from "typeorm";
 import AppDataSource from "../utils/database.utils";
 import type { ProductInput } from "../types/product.types";
-import { isPositiveInteger } from "../utils/number.utils";
+import { parseId } from "../utils/number.utils";
 import CartItem from "./cart-item.model";
 
 function productRepository() {
@@ -44,18 +44,6 @@ class Product {
     return productRepository().save(this);
   }
 
-  /** Accepts a number or numeric string (e.g. URL param `"3"`). */
-  static parseId(value: unknown): number | null {
-    if (isPositiveInteger(value)) {
-      return value;
-    }
-    if (typeof value === "string" && /^\d+$/.test(value.trim())) {
-      const id = Number(value.trim());
-      return id > 0 ? id : null;
-    }
-    return null;
-  }
-
   static async update(
     id: number,
     productData: ProductInput,
@@ -88,7 +76,7 @@ class Product {
   }
 
   static async fetchProductById(id: unknown): Promise<Product | undefined> {
-    const parsedId = Product.parseId(id);
+    const parsedId = parseId(id);
     if (parsedId === null) {
       return undefined;
     }
@@ -100,7 +88,7 @@ class Product {
   }
 
   static async fetchPublishedById(id: unknown): Promise<Product | undefined> {
-    const parsedId = Product.parseId(id);
+    const parsedId = parseId(id);
     if (parsedId === null) {
       return undefined;
     }
