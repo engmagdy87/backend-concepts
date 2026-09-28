@@ -16,6 +16,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `POST /admin/delete-product` to delete a product by `id`
 - JWT access tokens (`utils/token.utils.ts`, HS256): `JWT_SECRET` and `JWT_EXPIRES_IN` (seconds) from `.env`; the server refuses to start if either is missing or invalid
 - `.env.example` listing the required environment variables
+- `GET /auth/me` returns the caller's own user from the token (`401` for a missing, malformed, invalid, or expired token; `404` if the user no longer exists)
+- `requireAuth` middleware (`middlewares/auth.middleware.ts`): reads `Authorization: Bearer <token>`, verifies it, and sets `req.user`
 
 ### Fixed
 - `POST /admin/delete-product` returns `400` instead of `500` when the request has no JSON body

@@ -22,3 +22,8 @@ export const loginService = async ({
   const token = signToken({ userId: user.id, email: user.email });
   return { accessToken: token };
 };
+
+export const meService = async (
+  userId: number,
+): Promise<UserOutput | null> =>
+  (await User.fetchUserById(userId)) ?? null;

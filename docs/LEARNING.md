@@ -4,6 +4,14 @@ Notes on backend concepts practiced in this repo. Newest entries first.
 
 Update this file when a feature teaches a concept worth keeping. Skip chores, formatting-only changes, and WIP commits.
 
+## 2026-09-29 — Auth middleware and `GET /me`
+
+- Middleware sits between the route and the controller: `router.get("/me", requireAuth, me)`. It either answers early (`401`) or sets `req.user` and calls `next()`. Controllers behind it never parse headers.
+- The server trusts the token, not the request: `/me` takes no id, so a user can only ever see themselves. The same `req.user` will drive `/admin` and the per-user cart.
+- `req.user` needs declaration merging (`types/express.d.ts` adds `user?: TokenPayload` to Express's `Request`). Optional, because public routes never run the middleware. `(req as any).user` would compile but lose all checks.
+- `401` = "who are you?" (no/bad/expired token). `404` from `/me` = the token is valid but the user was deleted — a JWT stays valid until it expires, even if its user is gone.
+- A stolen token works for anyone until `exp`; the signature only stops editing and forging. Short expiry limits the damage; real revoke needs `tokenVersion`, refresh tokens, or a denylist.
+
 ## 2026-09-29 — Login issues a JWT
 
 - A JWT is signed, not encrypted: anyone can base64-decode the payload (jwt.io). Put only ids in it (`userId`, `email`), never the hash or secrets. The signature only proves the server made it and nobody edited it.

@@ -18,7 +18,7 @@ Basic auth + guest cart for this shop API. Implement in order. Skip nice-to-have
 | Stage | Tag | Plan steps | Status |
 | --- | --- | --- | --- |
 | Users + signup/login | `chapter-auth-users` | 1, 2 (without JWT) | Done |
-| JWT + `GET /me` + roles + lock `/admin` | `chapter-auth-jwt` | 2 (JWT), 3, 6 | In progress (JWT done) |
+| JWT + `GET /me` + roles + lock `/admin` | `chapter-auth-jwt` | 2 (JWT), 3, 6 | In progress (JWT + `GET /me` done) |
 | Guest cart cookie + cart per user | `chapter-auth-cart` | 4, 5 | Later |
 
 ---
@@ -38,11 +38,11 @@ Basic auth + guest cart for this shop API. Implement in order. Skip nice-to-have
 - [x] Login issues a **JWT** (`{ userId, email }`, `JWT_EXPIRES_IN` seconds, HS256) → `{ data: { accessToken } }`
 - [x] Never return the password hash (`User#toJSON`)
 
-### 3. Proof on later requests
+### 3. Proof on later requests — done
 
-- [ ] Middleware: read `Authorization: Bearer <token>` → verify → put `req.user`
-- [ ] `GET /me` — returns current user (proves auth works)
-- [ ] Public stays public: shop products, guest cart
+- [x] Middleware: read `Authorization: Bearer <token>` → verify → put `req.user` (`middlewares/auth.middleware.ts` → `requireAuth`; `req.user` typed in `types/express.d.ts`)
+- [x] `GET /auth/me` — returns current user (proves auth works); `401` bad/missing token, `404` user deleted since the token was issued
+- [x] Public stays public: shop products, guest cart (no middleware on those routers)
 
 ### 4. Guest cart cookie (before / without signup)
 
@@ -58,7 +58,7 @@ Basic auth + guest cart for this shop API. Implement in order. Skip nice-to-have
 
 ### 6. Protect what needs it
 
-- [ ] Start with `GET /me`
+- [x] Start with `GET /me`
 - [ ] Add `users.role` (`'customer' | 'admin'`, default `'customer'`) — manual SQL (`synchronize: false`)
 - [ ] Signup and admin add-user never set `role` from the body (constructor copies fields explicitly — keep it)
 - [ ] Create the first admin by hand in SQL, not through an API

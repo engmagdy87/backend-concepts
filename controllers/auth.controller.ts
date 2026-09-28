@@ -1,6 +1,10 @@
 import { Request, Response } from "express";
 import type { SignupBody, LoginBody } from "../types/auth.types";
-import { loginService, signupService } from "../services/auth.service";
+import {
+  loginService,
+  meService,
+  signupService,
+} from "../services/auth.service";
 import { findMissingFields } from "../utils/validation.utils";
 import { USER_REQUIRED_FIELDS, type UserInput } from "../types/user.types";
 
@@ -47,4 +51,18 @@ export const login = async (
     message: "User logged in successfully",
     data: loginResponse,
   });
+};
+
+export const me = async (req: Request, res: Response) => {
+  if (!req.user) {
+    return res.status(401).json({ message: "Not authenticated" });
+  }
+
+  const user = await meService(req.user.userId);
+
+  if (!user) {
+    return res.status(404).json({ message: "User not found" });
+  }
+
+  res.json({ data: user });
 };
