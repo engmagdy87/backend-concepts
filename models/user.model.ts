@@ -71,8 +71,7 @@ class User {
     if (!user) {
       return false;
     }
-    await userRepository().remove(user);
-    return true;
+    return !!(await userRepository().remove(user));
   }
 
   static async fetchUsers(): Promise<User[]> {

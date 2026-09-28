@@ -67,8 +67,7 @@ class Product {
     if (!product) {
       return false;
     }
-    await productRepository().remove(product);
-    return true;
+    return !!(await productRepository().remove(product));
   }
 
   static async fetchProducts(): Promise<Product[]> {
