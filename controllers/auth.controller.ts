@@ -1,47 +1,46 @@
 import { Request, Response } from "express";
-import User from "../models/user.model";
 import type { SignupBody, LoginBody } from "../types/auth.types";
-import { signupService } from "../services/auth.service";
-import bcrypt from "bcrypt";
+import { loginService, signupService } from "../services/auth.service";
+import { findMissingFields } from "../utils/validation.utils";
+import { USER_REQUIRED_FIELDS, type UserInput } from "../types/user.types";
 
 export const signup = async (
   req: Request<unknown, unknown, SignupBody>,
   res: Response,
 ) => {
-  try {
-    const user = await signupService(req.body);
+  const missing = findMissingFields<UserInput>(req.body, USER_REQUIRED_FIELDS);
 
-    if (!user) {
-      return res.status(409).json({ message: "Email already exists" });
-    }
-
-    res
-      .status(201)
-      .json({ message: "User signed up successfully", data: user });
-  } catch (error: unknown) {
-    res.status(500).json({
-      message: "Failed to sign up user",
-      error: (error as Error).message,
-    });
+  if (missing.length) {
+    return res
+      .status(400)
+      .json({ message: `Missing fields: ${missing.join(", ")}` });
   }
+
+  const user = await signupService(req.body);
+
+  if (!user) {
+    return res.status(409).json({ message: "Email already exists" });
+  }
+
+  res.status(201).json({ message: "User signed up successfully", data: user });
 };
 
 export const login = async (
   req: Request<unknown, unknown, LoginBody>,
   res: Response,
 ) => {
-  const { email, password } = req.body;
+  const missing = findMissingFields<LoginBody>(req.body, ["email", "password"]);
 
-  const user = await User.fetchUserByEmail(email);
-
-  if (!user) {
-    return res.status(401).json({ message: "Email not found" });
+  if (missing.length) {
+    return res
+      .status(400)
+      .json({ message: `Missing fields: ${missing.join(", ")}` });
   }
 
-  const isPasswordValid = await bcrypt.compare(password, user.password);
+  const user = await loginService(req.body);
 
-  if (!isPasswordValid) {
-    return res.status(401).json({ message: "Password is incorrect" });
+  if (!user) {
+    return res.status(401).json({ message: "Invalid email or password" });
   }
 
   res.json({

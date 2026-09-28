@@ -43,7 +43,7 @@ export const deleteProduct = async (
   req: Request<unknown, unknown, DeleteProductBody>,
   res: Response,
 ) => {
-  const parsedId = parseId(req.body.id);
+  const parsedId = parseId(req.body?.id ?? "");
 
   if (parsedId === null) {
     return res.status(400).json({

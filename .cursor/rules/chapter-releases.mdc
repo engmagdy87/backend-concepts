@@ -9,11 +9,13 @@ The agent **decides** whether the current work is a new learning chapter. Do not
 
 Existing chapters: `chapter-json` → `chapter-mysql-products` → `chapter-mysql2` → `chapter-typeorm`. Next expected era: Prisma → `chapter-prisma`.
 
+Auth is tagged in **stages** (see `docs/AUTH-PLAN.md` → Stages): `chapter-auth-users` → `chapter-auth-jwt` → `chapter-auth-cart`. Tag each stage on the commit that finishes it; work inside a stage is not a new tag.
+
 ## When to tag (yes)
 
 A **new persistence or architecture era** you would later check out as a snapshot. Same turn as the finishing commit (or immediately after it succeeds).
 
-Examples: JSON files → mysql2; mysql2 → TypeORM; TypeORM → Prisma; later Nest/auth as a whole era, not a small endpoint.
+Examples: JSON files → mysql2; mysql2 → TypeORM; TypeORM → Prisma; each auth stage above; later Nest as a whole era, not a small endpoint.
 
 ## When not to tag
 

@@ -1,13 +1,25 @@
 import { Request, Response } from "express";
 import User from "../models/user.model";
-import type { UserInput, DeleteUserBody } from "../types/user.types";
+import {
+  USER_REQUIRED_FIELDS,
+  type UserInput,
+  type DeleteUserBody,
+} from "../types/user.types";
 import { parseId } from "../utils/number.utils";
 import { createUserService, updateUserService } from "../services/user.service";
+import { findMissingFields } from "../utils/validation.utils";
 
 export const addUser = async (
   req: Request<unknown, unknown, UserInput>,
   res: Response,
 ) => {
+  const missing = findMissingFields<UserInput>(req.body, USER_REQUIRED_FIELDS);
+
+  if (missing.length) {
+    return res
+      .status(400)
+      .json({ message: `Missing fields: ${missing.join(", ")}` });
+  }
   const user = await createUserService(req.body);
 
   if (!user) {
@@ -32,6 +44,14 @@ export const updateUser = async (
     });
   }
 
+  const missing = findMissingFields<UserInput>(req.body, USER_REQUIRED_FIELDS);
+
+  if (missing.length) {
+    return res
+      .status(400)
+      .json({ message: `Missing fields: ${missing.join(", ")}` });
+  }
+
   const result = await updateUserService(parsedId, req.body);
 
   if (result.status === "not_found") {
@@ -48,7 +68,7 @@ export const deleteUser = async (
   req: Request<unknown, unknown, DeleteUserBody>,
   res: Response,
 ) => {
-  const parsedId = parseId(req.body.id);
+  const parsedId = parseId(req.body?.id ?? "");
 
   if (parsedId === null) {
     return res.status(400).json({

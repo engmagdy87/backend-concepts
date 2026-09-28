@@ -5,7 +5,14 @@ export interface UserInput {
   lastName: string;
 }
 
-export interface UserOutput extends UserInput {
+export const USER_REQUIRED_FIELDS: (keyof UserInput)[] = [
+  "email",
+  "password",
+  "firstName",
+  "lastName",
+];
+
+export interface UserOutput extends Omit<UserInput, "password"> {
   id: number;
   createdAt: Date;
 }

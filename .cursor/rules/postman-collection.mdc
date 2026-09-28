@@ -10,7 +10,7 @@ When you **add, change, or remove an HTTP endpoint**, update both copies in the 
 1. **Local first** — edit `postman/backend-concepts.postman_collection.json` (folders, method, path, body, `baseUrl`).
 2. **Then Postman cloud** — sync that same collection through the working Postman MCP (`user-postman-api-mcp`). Prefer replacing the cloud collection with the local file (`putCollection`) so they match.
 
-Cloud collection UID: `35152687-42d4f03c-deec-4df2-886e-1f1e59ad40ea`  
-Workspace: `My Workspace` (`63ac573d-5bc5-4030-8d22-b8438f13895d`)
+Cloud collection UID: `35152687-d8a8ccff-2ddb-4ad1-950a-5278c57b5cc8`  
+Workspace: `backend-concepts` (`cab9cbc2-cfad-498f-ad8b-637d9fe456e5`)
 
 Skip for internal-only refactors with no route or request-body change.

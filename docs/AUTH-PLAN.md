@@ -13,41 +13,53 @@ Basic auth + guest cart for this shop API. Implement in order. Skip nice-to-have
 
 ---
 
+## Stages (chapter tags)
+
+| Stage | Tag | Plan steps | Status |
+| --- | --- | --- | --- |
+| Users + signup/login | `chapter-auth-users` | 1, 2 (without JWT) | Done |
+| JWT + `GET /me` + lock `/admin` | `chapter-auth-jwt` | 2 (JWT), 3, 6 | Next |
+| Guest cart cookie + cart per user | `chapter-auth-cart` | 4, 5 | Later |
+
+---
+
 ## Plan (do in order)
 
-### 1. Users table
+### 1. Users table — done
 
-- Columns: `id`, `email` (unique), `passwordHash`, `createdAt`
-- TypeORM model like Product/Cart; create table by hand (`synchronize: false`)
+- [x] Columns: `id`, `email` (unique), `password` (bcrypt hash), `firstName`, `lastName`, `createdAt`
+- [x] TypeORM model like Product/Cart; table created by hand (`synchronize: false`), `UNIQUE (email)` in MySQL
+- [x] Admin user CRUD under `/admin` (add, update, delete, list, get by id) — not in the original plan
 
-### 2. Signup + login
+### 2. Signup + login — in progress
 
-- `POST /auth/signup` — email + password → hash → insert user → **201**
-- `POST /auth/login` — email + password → compare hash → issue **JWT** (e.g. `{ userId, email }`, short expiry)
-- Never return `passwordHash`
+- [x] `POST /auth/signup` — body → hash → insert user → **201** (**409** if the email exists)
+- [x] `POST /auth/login` — email + password → compare hash (**401** "Invalid email or password")
+- [ ] Login issues a **JWT** (e.g. `{ userId, email }`, short expiry) instead of returning the user
+- [x] Never return the password hash (`User#toJSON`)
 
 ### 3. Proof on later requests
 
-- Middleware: read `Authorization: Bearer <token>` → verify → put `req.user`
-- `GET /me` — returns current user (proves auth works)
-- Public stays public: shop products, guest cart
+- [ ] Middleware: read `Authorization: Bearer <token>` → verify → put `req.user`
+- [ ] `GET /me` — returns current user (proves auth works)
+- [ ] Public stays public: shop products, guest cart
 
 ### 4. Guest cart cookie (before / without signup)
 
-- On first cart touch: create cart row → `Set-Cookie` with opaque guest/cart id (`HttpOnly`)
-- `getOrCreateGuest` becomes “find cart for this cookie,” not “one shared row”
-- Client still sends only `productId` on add/remove — never `cartId` in the body
+- [ ] On first cart touch: create cart row → `Set-Cookie` with opaque guest/cart id (`HttpOnly`)
+- [ ] `getOrCreateGuest` becomes “find cart for this cookie,” not “one shared row”
+- [ ] Client still sends only `productId` on add/remove — never `cartId` in the body
 
 ### 5. Tie cart to user (after login works)
 
-- Add nullable `carts.userId`
-- On login (and/or signup): find guest cart from cookie → attach/merge to that user’s cart
-- Logged-in `GET /cart` resolves by `userId`; guest still by cookie
+- [ ] Add nullable `carts.userId`
+- [ ] On login (and/or signup): find guest cart from cookie → attach/merge to that user’s cart
+- [ ] Logged-in `GET /cart` resolves by `userId`; guest still by cookie
 
 ### 6. Protect what needs it
 
-- Start with `GET /me`
-- Then lock `/admin` so only a logged-in user (role later if you want)
+- [ ] Start with `GET /me`
+- [ ] Then lock `/admin` so only a logged-in user (role later if you want)
 
 ---
 

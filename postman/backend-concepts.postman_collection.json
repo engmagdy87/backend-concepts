@@ -1,7 +1,8 @@
 {
   "info": {
+    "_postman_id": "d8a8ccff-2ddb-4ad1-950a-5278c57b5cc8",
     "name": "backend-concepts",
-    "description": "Local Express learning API: admin products, shop (published), and cart.\n\nCart is one guest basket (`carts`) plus `cart_items`. GET/POST/DELETE `/cart` return items with `cartId`, `productId`, `quantity`, and a nested `product`. Add/remove body is still `{ productId }` (published products only).",
+    "description": "Express learning API: admin products + users, shop (published), guest cart, and auth (signup/login).\n\nRun server: yarn start → [http://localhost:3040](http://localhost:3040)\n\nBody: raw JSON. Use the Local env or the collection variable `baseUrl`.\n\nAuth: signup/login exist; login does not issue a JWT yet, and `/admin` is not protected yet.\n\nCart is one guest basket (`carts`) plus `cart_items`. GET/POST/DELETE `/cart` return items with `cartId`, `productId`, `quantity`, and a nested `product`. Add/remove body is still `{ productId }` (published products only).\n\nUser responses never include `password`.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -11,14 +12,20 @@
     },
     {
       "key": "productId",
-      "value": "6"
+      "value": "20"
+    },
+    {
+      "key": "userId",
+      "value": "1"
     }
   ],
   "item": [
     {
+      "id": "d214f54e-2a13-4b7d-971c-87ae25063687",
       "name": "Admin",
       "item": [
         {
+          "id": "00bdb82e-6e80-4473-9c99-29156c6fd519",
           "name": "List products",
           "request": {
             "method": "GET",
@@ -27,6 +34,7 @@
           }
         },
         {
+          "id": "d6e33e8b-8859-462f-86b4-a023f1c90505",
           "name": "Get product by id",
           "request": {
             "method": "GET",
@@ -35,7 +43,25 @@
           }
         },
         {
+          "id": "e6f9c009-765b-4356-b4b8-ebe6f39e5841",
           "name": "Add product",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "",
+                  "const id = json.data?.id ?? json.id;",
+                  "",
+                  "if (id != null) {",
+                  "  pm.collectionVariables.set(\"productId\", String(id));",
+                  "}"
+                ]
+              }
+            }
+          ],
           "request": {
             "method": "POST",
             "header": [
@@ -46,12 +72,18 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"title\": \"A book\",\n  \"price\": 19.99,\n  \"description\": \"A useful book\",\n  \"imageUrl\": \"https://example.com/book.png\",\n  \"isPublished\": true\n}"
+              "raw": "{\n  \"title\": \"A book\",\n  \"price\": 19.99,\n  \"description\": \"A useful book\",\n  \"imageUrl\": \"https://example.com/book.png\",\n  \"isPublished\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": "{{baseUrl}}/admin/add-product"
           }
         },
         {
+          "id": "82abd5ca-4df5-45c3-99a6-0a5b1f4a0648",
           "name": "Update product",
           "request": {
             "method": "PUT",
@@ -63,12 +95,18 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"title\": \"A book\",\n  \"price\": 24.99,\n  \"description\": \"A useful book\",\n  \"imageUrl\": \"https://example.com/book.png\",\n  \"isPublished\": true\n}"
+              "raw": "{\n  \"title\": \"A book\",\n  \"price\": 24.99,\n  \"description\": \"A useful book\",\n  \"imageUrl\": \"https://example.com/book.png\",\n  \"isPublished\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": "{{baseUrl}}/admin/products/{{productId}}"
           }
         },
         {
+          "id": "a71b6de6-cc75-4da8-a7cf-a7a033318faf",
           "name": "Delete product",
           "request": {
             "method": "POST",
@@ -80,7 +118,12 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"id\": 1\n}"
+              "raw": "{\n  \"id\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": "{{baseUrl}}/admin/delete-product"
           }
@@ -88,9 +131,11 @@
       ]
     },
     {
+      "id": "a1cdd5c2-a99b-426b-8158-bf66d91ecf83",
       "name": "Shop",
       "item": [
         {
+          "id": "c082e3a5-0ab7-4f39-9ef3-3de2972eac4b",
           "name": "List published products",
           "request": {
             "method": "GET",
@@ -99,6 +144,7 @@
           }
         },
         {
+          "id": "4c957caf-aa55-462b-a8ac-c51f7c13b308",
           "name": "Get published product by id",
           "request": {
             "method": "GET",
@@ -109,10 +155,12 @@
       ]
     },
     {
+      "id": "27feb030-c248-4ea4-a07a-73f75d638522",
       "name": "Cart",
       "description": "One guest cart. Responses are the item list. Each item includes `cartId`, `productId`, `quantity`, and a nested `product`.",
       "item": [
         {
+          "id": "575a0566-ef80-43e7-b57f-ea65b6efab46",
           "name": "Get cart",
           "request": {
             "method": "GET",
@@ -122,6 +170,7 @@
           }
         },
         {
+          "id": "19ef1ce5-048b-42a2-b2fe-78a0e151bd2c",
           "name": "Add item",
           "request": {
             "method": "POST",
@@ -140,6 +189,7 @@
           }
         },
         {
+          "id": "51039171-2097-46af-9f54-a89207f0f753",
           "name": "Remove item",
           "request": {
             "method": "DELETE",
@@ -158,12 +208,183 @@
           }
         },
         {
+          "id": "b982db62-dede-436c-9c09-a6be42a93087",
           "name": "Clear cart",
           "request": {
             "method": "DELETE",
             "header": [],
             "description": "Empty the guest cart (deletes its items; the cart row stays).",
             "url": "{{baseUrl}}/cart"
+          }
+        }
+      ]
+    },
+    {
+      "id": "ab8e2b0a-494f-4492-9d17-283b23a06202",
+      "name": "User",
+      "description": "Admin user management under `/admin`. Not protected yet. Responses never include `password`.",
+      "item": [
+        {
+          "id": "f83d0e76-018a-4999-8b1a-456fdccc527c",
+          "name": "List users",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/admin/users"
+          }
+        },
+        {
+          "id": "bffbd302-4bf0-40dd-9948-c06d505a3dd7",
+          "name": "Get user by id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "description": "404 if the user does not exist.",
+            "url": "{{baseUrl}}/admin/users/{{userId}}"
+          }
+        },
+        {
+          "id": "7a29636d-6c40-4b40-bbbe-8e08f0c1c615",
+          "name": "Add user",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "",
+                  "const id = json.data?.id;",
+                  "",
+                  "if (id != null) {",
+                  "  pm.collectionVariables.set(\"userId\", String(id));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"mm@test.com\",\n  \"password\": \"test123\",\n  \"firstName\": \"Mohamed\",\n  \"lastName\": \"Magdy\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "All fields required (400 lists missing ones). 409 if the email already exists. Sets `userId` on success.",
+            "url": "{{baseUrl}}/admin/add-user"
+          }
+        },
+        {
+          "id": "f02248f0-d787-4cf1-b0a4-63101be29722",
+          "name": "Update user",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"mm@test.com\",\n  \"password\": \"test123\",\n  \"firstName\": \"Ali\",\n  \"lastName\": \"Magdy\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Full replace: all fields required, password is re-hashed. 404 if the user does not exist, 409 if the email belongs to another user.",
+            "url": "{{baseUrl}}/admin/update-user/{{userId}}"
+          }
+        },
+        {
+          "id": "07181f55-d640-4e8e-8607-ec2e7cfbec13",
+          "name": "Delete user",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": {{userId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "404 if the user does not exist.",
+            "url": "{{baseUrl}}/admin/delete-user"
+          }
+        }
+      ]
+    },
+    {
+      "id": "9e69bd93-5dec-4a9f-b48c-b44144cd9bb5",
+      "name": "Auth",
+      "description": "Users acting for themselves. Login does not issue a JWT yet (plan step 2).",
+      "item": [
+        {
+          "id": "675c2728-b2b2-4bea-899c-c7891ddbb193",
+          "name": "Signup",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"new.user@test.com\",\n  \"password\": \"test123\",\n  \"firstName\": \"New\",\n  \"lastName\": \"User\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "201 with the new user. All fields required (400 lists missing ones). 409 if the email already exists.",
+            "url": "{{baseUrl}}/auth/signup"
+          }
+        },
+        {
+          "id": "cc7ed932-4258-41b7-bb7c-5bf014a9a6e8",
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"new.user@test.com\",\n  \"password\": \"test123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "200 with the user. 400 if email or password is missing. 401 \"Invalid email or password\" for a wrong email or wrong password.",
+            "url": "{{baseUrl}}/auth/login"
           }
         }
       ]

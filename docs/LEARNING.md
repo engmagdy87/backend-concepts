@@ -4,6 +4,24 @@ Notes on backend concepts practiced in this repo. Newest entries first.
 
 Update this file when a feature teaches a concept worth keeping. Skip chores, formatting-only changes, and WIP commits.
 
+## 2026-09-28 — One create path for admin and signup
+
+- "Email must be unique" is a user rule, not a route rule. Admin add-user and signup both call `createUserService` (check email → hash → save), so there is one check, not two.
+- The app check gives a friendly `409`; the DB `UNIQUE (email)` is the real guarantee when two requests race. `synchronize: false` means `unique: true` on the column does nothing until the `ALTER TABLE` runs.
+- `409 Conflict` (clashes with existing data) vs `400` (the request itself is malformed).
+
+## 2026-09-28 — Service results with more than one failure
+
+- Update can fail two ways (not found, email taken). Returning the other user's object as a signal made the controller guess by comparing ids — and it guessed backwards.
+- A result union `{ status: "ok", user } | { status: "not_found" } | { status: "email_in_use" }` names each outcome; TypeScript only allows `result.user` when `status === "ok"`.
+
+## 2026-09-28 — Keeping the password hash out of responses
+
+- `res.json()` calls `JSON.stringify`, which calls an object's `toJSON()` if it has one. `User#toJSON` drops `password`, so every endpoint is covered, while code can still read `user.password` for login.
+- It is implicit: `{ ...user }` makes a plain copy without `toJSON` and leaks the hash. Prisma returns plain objects, so the next chapter uses `omit` instead.
+- Login uses one message ("Invalid email or password") for a wrong email and a wrong password, so nobody can probe which emails have accounts.
+- Express 5 leaves `req.body` `undefined` when no JSON body is sent. Destructuring it throws a `500`; read with `req.body?.` and return `400`.
+
 ## 2026-09-22 — Nested relations vs a second list query
 
 - `GET /cart` used `getOrCreateGuest` then `listForCart` (two round-trips). Same lines in one find: `relations: { items: { product: true } }` on the cart, return `cart.items`.

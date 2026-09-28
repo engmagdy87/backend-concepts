@@ -5,7 +5,7 @@ import {
   CreateDateColumn,
 } from "typeorm";
 import AppDataSource from "../utils/database.utils";
-import type { UserInput } from "../types/user.types";
+import type { UserInput, UserOutput } from "../types/user.types";
 import { parseId } from "../utils/number.utils";
 
 function userRepository() {
@@ -42,6 +42,12 @@ class User {
 
   async save(): Promise<User> {
     return userRepository().save(this);
+  }
+
+  /** `res.json()` calls this, so the password hash never leaves the API. */
+  toJSON(): UserOutput {
+    const { password: _password, ...publicUser } = this;
+    return publicUser;
   }
 
   static async update(

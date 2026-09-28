@@ -1,10 +1,10 @@
-import bcrypt from "bcrypt";
 import User from "../models/user.model";
 import type {
   UpdateUserResult,
   UserInput,
   UserOutput,
 } from "../types/user.types";
+import { hashPassword } from "../utils/password.utils";
 
 export const createUserService = async (
   userData: UserInput,
@@ -14,8 +14,7 @@ export const createUserService = async (
   if (existingUser) {
     return null;
   }
-
-  const passwordHash = await bcrypt.hash(userData.password, 10);
+  const passwordHash = await hashPassword(userData.password);
   const user = new User({ ...userData, password: passwordHash });
   return user.save();
 };
@@ -39,7 +38,7 @@ export const updateUserService = async (
   if (newEmailOwner && newEmailOwner.id !== userId)
     return { status: "email_in_use" };
 
-  const passwordHash = await bcrypt.hash(userData.password, 10);
+  const passwordHash = await hashPassword(userData.password);
 
   const updatedUser = await User.update(userId, {
     ...userData,
