@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "d8a8ccff-2ddb-4ad1-950a-5278c57b5cc8",
     "name": "backend-concepts",
-    "description": "Express learning API: admin products + users, shop (published), guest cart, and auth (signup/login).\n\nRun server: yarn start → [http://localhost:3040](http://localhost:3040)\n\nBody: raw JSON. Use the Local env or the collection variable `baseUrl`.\n\nAuth: signup/login exist; login does not issue a JWT yet, and `/admin` is not protected yet.\n\nCart is one guest basket (`carts`) plus `cart_items`. GET/POST/DELETE `/cart` return items with `cartId`, `productId`, `quantity`, and a nested `product`. Add/remove body is still `{ productId }` (published products only).\n\nUser responses never include `password`.",
+    "description": "Express learning API: admin products + users, shop (published), guest cart, and auth (signup/login).\n\nRun server: yarn start → [http://localhost:3040](http://localhost:3040)\n\nBody: raw JSON. Use the Local env or the collection variable `baseUrl`.\n\nAuth: login returns a JWT (`data.accessToken`, 15 minutes); the Login request saves it to the `token` variable. `/admin` is not protected yet.\n\nCart is one guest basket (`carts`) plus `cart_items`. GET/POST/DELETE `/cart` return items with `cartId`, `productId`, `quantity`, and a nested `product`. Add/remove body is still `{ productId }` (published products only).\n\nUser responses never include `password`.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -17,6 +17,10 @@
     {
       "key": "userId",
       "value": "1"
+    },
+    {
+      "key": "token",
+      "value": ""
     }
   ],
   "item": [
@@ -310,7 +314,7 @@
     {
       "id": "9e69bd93-5dec-4a9f-b48c-b44144cd9bb5",
       "name": "Auth",
-      "description": "Users acting for themselves. Login does not issue a JWT yet (plan step 2).",
+      "description": "Users acting for themselves. Login returns a JWT access token; nothing checks it yet (plan step 3 adds the middleware and `GET /me`).",
       "item": [
         {
           "id": "675c2728-b2b2-4bea-899c-c7891ddbb193",
@@ -339,6 +343,23 @@
         {
           "id": "cc7ed932-4258-41b7-bb7c-5bf014a9a6e8",
           "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "",
+                  "const token = json.data?.accessToken;",
+                  "",
+                  "if (token) {",
+                  "  pm.collectionVariables.set(\"token\", token);",
+                  "}"
+                ]
+              }
+            }
+          ],
           "request": {
             "method": "POST",
             "header": [
@@ -356,7 +377,7 @@
                 }
               }
             },
-            "description": "200 with the user. 400 if email or password is missing. 401 \"Invalid email or password\" for a wrong email or wrong password.",
+            "description": "200 with `data.accessToken` (JWT, 15 minutes). Sets `token` on success. 400 if email or password is missing. 401 \"Invalid email or password\" for a wrong email or wrong password.",
             "url": "{{baseUrl}}/auth/login"
           }
         }

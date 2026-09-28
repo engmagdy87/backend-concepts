@@ -8,12 +8,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 - `users` table (TypeORM `User`, unique `email`) with admin CRUD: `POST /admin/add-user`, `PUT /admin/update-user/:id`, `DELETE /admin/delete-user`, `GET /admin/users`, `GET /admin/users/:id`
-- `POST /auth/signup` (`201`; `409` when the email exists) and `POST /auth/login` (`401` "Invalid email or password"; no JWT yet)
+- `POST /auth/signup` (`201`; `409` when the email exists) and `POST /auth/login` (`401` "Invalid email or password")
 - Passwords hashed with bcrypt (`utils/password.utils.ts`); user responses never include `password`
 - Required-field check (`utils/validation.utils.ts`): add/update user, signup, and login return `400` listing missing fields
 - Cart API under `/cart` with service layer (published-product check; add/remove one unit)
 - `PUT /admin/products/:id` to replace an existing product (id in the URL)
 - `POST /admin/delete-product` to delete a product by `id`
+- JWT access tokens (`utils/token.utils.ts`, HS256): `JWT_SECRET` and `JWT_EXPIRES_IN` (seconds) from `.env`; the server refuses to start if either is missing or invalid
+- `.env.example` listing the required environment variables
 
 ### Fixed
 - `POST /admin/delete-product` returns `400` instead of `500` when the request has no JSON body
@@ -24,6 +26,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `POST /admin/delete-product` returns `404` when no MySQL row matches
 
 ### Changed
+- `POST /auth/login` returns `{ data: { accessToken } }` (JWT with `userId` and `email`, 15 minutes by default) instead of the user
 - Delete takes the id in the URL, no JSON body: `DELETE /admin/delete-product/:id` (was `POST /admin/delete-product`) and `DELETE /admin/delete-user/:id` (was `DELETE /admin/delete-user`)
 - `parseId` moved from `Product` to `utils/number.utils.ts` (shared by products, cart, and users)
 - `GET /cart` loads the guest cart with nested `items.product` in one TypeORM find (same JSON array response)

@@ -4,6 +4,14 @@ Notes on backend concepts practiced in this repo. Newest entries first.
 
 Update this file when a feature teaches a concept worth keeping. Skip chores, formatting-only changes, and WIP commits.
 
+## 2026-09-29 — Login issues a JWT
+
+- A JWT is signed, not encrypted: anyone can base64-decode the payload (jwt.io). Put only ids in it (`userId`, `email`), never the hash or secrets. The signature only proves the server made it and nobody edited it.
+- Pin the algorithm on both sides (`JWT_ALGORITHM = "HS256"`, `algorithms: [JWT_ALGORITHM]` on verify) so a token can't pick its own, e.g. `alg: none`.
+- `jwt.verify` throws for expired, tampered, or wrong-secret tokens. `verifyToken` turns that into `null`, so the middleware only has to send `401`.
+- `parseInt("15m")` is `15`, and a numeric `expiresIn` means seconds — 15 minutes silently became 15 seconds. Store seconds (`900`), read with `Number` (`"15m"` → `NaN`), and throw at startup if it isn't a positive integer.
+- Fail fast on config: `requireEnv` stops the server when `JWT_SECRET` is missing, instead of signing with `undefined`. `.env.example` lists what a fresh clone needs.
+
 ## 2026-09-28 — Resource id in the path, not the body
 
 - The URL names the resource; the method names the action. `DELETE /admin/delete-product/:id` matches `GET` / `PUT /products/:id`, so the id always lives in the same place.

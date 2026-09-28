@@ -37,14 +37,14 @@ export const login = async (
       .json({ message: `Missing fields: ${missing.join(", ")}` });
   }
 
-  const user = await loginService(req.body);
+  const loginResponse = await loginService(req.body);
 
-  if (!user) {
+  if (!loginResponse) {
     return res.status(401).json({ message: "Invalid email or password" });
   }
 
   res.json({
     message: "User logged in successfully",
-    data: user,
+    data: loginResponse,
   });
 };

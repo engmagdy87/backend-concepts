@@ -18,7 +18,7 @@ Basic auth + guest cart for this shop API. Implement in order. Skip nice-to-have
 | Stage | Tag | Plan steps | Status |
 | --- | --- | --- | --- |
 | Users + signup/login | `chapter-auth-users` | 1, 2 (without JWT) | Done |
-| JWT + `GET /me` + roles + lock `/admin` | `chapter-auth-jwt` | 2 (JWT), 3, 6 | Next |
+| JWT + `GET /me` + roles + lock `/admin` | `chapter-auth-jwt` | 2 (JWT), 3, 6 | In progress (JWT done) |
 | Guest cart cookie + cart per user | `chapter-auth-cart` | 4, 5 | Later |
 
 ---
@@ -31,11 +31,11 @@ Basic auth + guest cart for this shop API. Implement in order. Skip nice-to-have
 - [x] TypeORM model like Product/Cart; table created by hand (`synchronize: false`), `UNIQUE (email)` in MySQL
 - [x] Admin user CRUD under `/admin` (add, update, delete, list, get by id) — not in the original plan
 
-### 2. Signup + login — in progress
+### 2. Signup + login — done
 
 - [x] `POST /auth/signup` — body → hash → insert user → **201** (**409** if the email exists)
 - [x] `POST /auth/login` — email + password → compare hash (**401** "Invalid email or password")
-- [ ] Login issues a **JWT** (e.g. `{ userId, email }`, short expiry) instead of returning the user
+- [x] Login issues a **JWT** (`{ userId, email }`, `JWT_EXPIRES_IN` seconds, HS256) → `{ data: { accessToken } }`
 - [x] Never return the password hash (`User#toJSON`)
 
 ### 3. Proof on later requests
