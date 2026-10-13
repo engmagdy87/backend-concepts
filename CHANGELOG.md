@@ -18,6 +18,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `.env.example` listing the required environment variables
 - `GET /auth/me` returns the caller's own user from the token (`401` for a missing, malformed, invalid, or expired token; `404` if the user no longer exists)
 - `requireAuth` middleware (`middlewares/auth.middleware.ts`): reads `Authorization: Bearer <token>`, verifies it, and sets `req.user`
+- `users.role` (`customer` | `admin`, default `customer`); first admin created by SQL
+- `requireAdmin` middleware: **403** `"Admins only"` when the token is valid but the role is not `admin`
+- `POST /admin/add-user` optional `role` (checked against `USER_ROLES`; omitted → `customer`)
 
 ### Fixed
 - `POST /admin/delete-product` returns `400` instead of `500` when the request has no JSON body
@@ -28,7 +31,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `POST /admin/delete-product` returns `404` when no MySQL row matches
 
 ### Changed
-- `POST /auth/login` returns `{ data: { accessToken } }` (JWT with `userId` and `email`, 15 minutes by default) instead of the user
+- `/admin` is locked: `app.use("/admin", requireAuth, requireAdmin, adminRoutes)` — **401** missing/bad token, **403** not admin
+- JWT payload includes `role` (`{ userId, email, role }`); `verifyToken` returns `null` if `role` is missing or not in `USER_ROLES`
+- `POST /auth/login` returns `{ data: { accessToken } }` (JWT with `userId`, `email`, and `role`, 15 minutes by default) instead of the user
 - Delete takes the id in the URL, no JSON body: `DELETE /admin/delete-product/:id` (was `POST /admin/delete-product`) and `DELETE /admin/delete-user/:id` (was `DELETE /admin/delete-user`)
 - `parseId` moved from `Product` to `utils/number.utils.ts` (shared by products, cart, and users)
 - `GET /cart` loads the guest cart with nested `items.product` in one TypeORM find (same JSON array response)

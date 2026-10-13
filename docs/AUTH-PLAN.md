@@ -18,7 +18,7 @@ Basic auth + guest cart for this shop API. Implement in order. Skip nice-to-have
 | Stage | Tag | Plan steps | Status |
 | --- | --- | --- | --- |
 | Users + signup/login | `chapter-auth-users` | 1, 2 (without JWT) | Done |
-| JWT + `GET /me` + roles + lock `/admin` | `chapter-auth-jwt` | 2 (JWT), 3, 6 | In progress (JWT + `GET /me` done) |
+| JWT + `GET /me` + roles + lock `/admin` | `chapter-auth-jwt` | 2 (JWT), 3, 6 | Done (tag on the finishing commit) |
 | Guest cart cookie + cart per user | `chapter-auth-cart` | 4, 5 | Later |
 
 ---
@@ -35,7 +35,7 @@ Basic auth + guest cart for this shop API. Implement in order. Skip nice-to-have
 
 - [x] `POST /auth/signup` — body → hash → insert user → **201** (**409** if the email exists)
 - [x] `POST /auth/login` — email + password → compare hash (**401** "Invalid email or password")
-- [x] Login issues a **JWT** (`{ userId, email }`, `JWT_EXPIRES_IN` seconds, HS256) → `{ data: { accessToken } }`
+- [x] Login issues a **JWT** (`{ userId, email, role }`, `JWT_EXPIRES_IN` seconds, HS256) → `{ data: { accessToken } }`
 - [x] Never return the password hash (`User#toJSON`)
 
 ### 3. Proof on later requests — done
@@ -56,15 +56,15 @@ Basic auth + guest cart for this shop API. Implement in order. Skip nice-to-have
 - [ ] On login (and/or signup): find guest cart from cookie → attach/merge to that user’s cart
 - [ ] Logged-in `GET /cart` resolves by `userId`; guest still by cookie
 
-### 6. Protect what needs it
+### 6. Protect what needs it — done
 
 - [x] Start with `GET /me`
-- [ ] Add `users.role` (`'customer' | 'admin'`, default `'customer'`) — manual SQL (`synchronize: false`)
-- [ ] Signup and admin add-user never set `role` from the body (constructor copies fields explicitly — keep it)
-- [ ] Create the first admin by hand in SQL, not through an API
-- [ ] `requireAdmin` middleware after the auth middleware: no/bad token → **401**, valid token but not admin → **403**
-- [ ] Lock the whole router in one place: `app.use("/admin", requireAuth, requireAdmin, adminRoutes)`
-- [ ] Decide where `role` is read: from the JWT (stale until expiry — keep expiry short) or from the DB on each admin request
+- [x] Add `users.role` (`'customer' | 'admin'`, default `'customer'`) — manual SQL (`synchronize: false`)
+- [x] Signup never sets `role` (always `customer`). Admin add-user may pass `role` as a **separate** `createUserService` argument after `isUserRole`; the constructor still does not copy `role` from the body
+- [x] Create the first admin by hand in SQL, not through an API
+- [x] `requireAdmin` middleware after the auth middleware: no/bad token → **401**, valid token but not admin → **403**
+- [x] Lock the whole router in one place: `app.use("/admin", requireAuth, requireAdmin, adminRoutes)`
+- [x] Role is read from the JWT (stale until expiry — 15 minutes). Re-read from the DB later if demotion must be instant
 
 Why roles are here and not "later": signup is public, so "any logged-in user" means anyone can sign up and manage users/products.
 

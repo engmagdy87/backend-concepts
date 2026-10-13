@@ -5,7 +5,12 @@ import {
   CreateDateColumn,
 } from "typeorm";
 import AppDataSource from "../utils/database.utils";
-import type { UserInput, UserOutput } from "../types/user.types";
+import {
+  USER_ROLES,
+  type UserInput,
+  type UserOutput,
+  type UserRole,
+} from "../types/user.types";
 import { parseId } from "../utils/number.utils";
 
 function userRepository() {
@@ -29,15 +34,19 @@ class User {
   @Column({ type: "varchar", length: 100 })
   lastName!: string;
 
+  @Column({ type: "enum", enum: USER_ROLES, default: "customer" })
+  role!: UserRole;
+
   @CreateDateColumn()
   createdAt!: Date;
 
-  constructor(userData?: UserInput) {
+  constructor(userData?: UserInput, role: UserRole = "customer") {
     if (!userData) return;
     this.email = userData.email;
     this.password = userData.password;
     this.firstName = userData.firstName;
     this.lastName = userData.lastName;
+    this.role = role;
   }
 
   async save(): Promise<User> {

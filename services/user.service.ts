@@ -3,11 +3,13 @@ import type {
   UpdateUserResult,
   UserInput,
   UserOutput,
+  UserRole,
 } from "../types/user.types";
 import { hashPassword } from "../utils/password.utils";
 
 export const createUserService = async (
   userData: UserInput,
+  role: UserRole = "customer",
 ): Promise<UserOutput | null> => {
   const existingUser = await User.fetchUserByEmail(userData.email);
 
@@ -15,7 +17,7 @@ export const createUserService = async (
     return null;
   }
   const passwordHash = await hashPassword(userData.password);
-  const user = new User({ ...userData, password: passwordHash });
+  const user = new User({ ...userData, password: passwordHash }, role);
   return user.save();
 };
 

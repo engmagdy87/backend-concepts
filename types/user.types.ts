@@ -3,6 +3,7 @@ export interface UserInput {
   password: string;
   firstName: string;
   lastName: string;
+  role?: UserRole;
 }
 
 export const USER_REQUIRED_FIELDS: (keyof UserInput)[] = [
@@ -24,3 +25,10 @@ export type UpdateUserResult =
   | { status: "ok"; user: UserOutput }
   | { status: "not_found" }
   | { status: "email_in_use" };
+
+export const USER_ROLES = ["customer", "admin"] as const;
+
+export type UserRole = (typeof USER_ROLES)[number];
+
+export const isUserRole = (value: unknown): value is UserRole =>
+  USER_ROLES.includes(value as UserRole);

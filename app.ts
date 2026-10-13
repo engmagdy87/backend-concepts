@@ -8,13 +8,14 @@ import adminRoutes from "./routes/admin.route";
 import shopRoutes from "./routes/shop.route";
 import cartRoutes from "./routes/cart.route";
 import authRoutes from "./routes/auth.route";
+import { requireAdmin, requireAuth } from "./middlewares/auth.middleware";
 
 const app = express();
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 
-app.use("/admin", adminRoutes);
+app.use("/admin", requireAuth, requireAdmin, adminRoutes);
 app.use("/shop", shopRoutes);
 app.use("/cart", cartRoutes);
 app.use("/auth", authRoutes);

@@ -1,5 +1,6 @@
 import jwt from "jsonwebtoken";
 import type { TokenPayload } from "../types/auth.types";
+import { isUserRole } from "../types/user.types";
 
 function requireEnv(name: string): string {
   const value = process.env[name];
@@ -26,8 +27,18 @@ export const verifyToken = (token: string): TokenPayload | null => {
     const decoded = jwt.verify(token, JWT_SECRET, {
       algorithms: [JWT_ALGORITHM],
     });
+
     if (typeof decoded === "string") return null;
-    return { userId: Number(decoded.userId), email: String(decoded.email) };
+
+    if (!decoded.userId || !decoded.email || !decoded.role) return null;
+
+    if (!isUserRole(decoded.role)) return null;
+
+    return {
+      userId: Number(decoded.userId),
+      email: String(decoded.email),
+      role: decoded.role,
+    };
   } catch {
     return null;
   }

@@ -4,6 +4,15 @@ Notes on backend concepts practiced in this repo. Newest entries first.
 
 Update this file when a feature teaches a concept worth keeping. Skip chores, formatting-only changes, and WIP commits.
 
+## 2026-10-11 — Roles and locking `/admin`
+
+- "Logged in" is not "allowed". Signup is public, so `requireAuth` alone would let any customer manage users. `requireAdmin` after it: **401** who are you, **403** I know you and you may not.
+- Lock the router once (`app.use("/admin", requireAuth, requireAdmin, adminRoutes)`). New admin routes inherit the lock; you cannot forget one.
+- Role is a **separate constructor / service argument**, not a field copied from the body. Signup calls `createUserService(userData)` → always `customer`. Admin add-user checks `isUserRole` then passes the second argument. `"role": "admin"` on signup is ignored.
+- `USER_ROLES` is the one list for the TypeScript type, the MySQL `ENUM`, and the 400 message. `synchronize: false` means the column still needs a hand-written `ALTER TABLE`.
+- First admin is SQL, not an API: until an admin exists, `/admin` cannot create one.
+- Role lives in the JWT. Fast, no DB read per request. A demoted admin keeps access until `exp` (15 minutes). Re-read from the DB later if that window is too long. Change-role on an existing user stays a later endpoint (`PATCH`), not part of full-replace `PUT`.
+
 ## 2026-09-29 — Auth middleware and `GET /me`
 
 - Middleware sits between the route and the controller: `router.get("/me", requireAuth, me)`. It either answers early (`401`) or sets `req.user` and calls `next()`. Controllers behind it never parse headers.

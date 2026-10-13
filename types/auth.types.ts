@@ -1,3 +1,5 @@
+import type { UserRole } from "./user.types";
+
 export interface SignupBody {
   email: string;
   password: string;
@@ -13,6 +15,7 @@ export interface LoginBody {
 export interface TokenPayload {
   userId: number;
   email: string;
+  role: UserRole;
 }
 
 export interface LoginResponse {

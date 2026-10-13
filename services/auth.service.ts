@@ -19,11 +19,13 @@ export const loginService = async ({
   const isPasswordValid = await verifyPassword(password, user.password);
   if (!isPasswordValid) return null;
 
-  const token = signToken({ userId: user.id, email: user.email });
+  const token = signToken({
+    userId: user.id,
+    email: user.email,
+    role: user.role,
+  });
   return { accessToken: token };
 };
 
-export const meService = async (
-  userId: number,
-): Promise<UserOutput | null> =>
+export const meService = async (userId: number): Promise<UserOutput | null> =>
   (await User.fetchUserById(userId)) ?? null;
