@@ -4,6 +4,7 @@ import {
   isUserRole,
   USER_REQUIRED_FIELDS,
   USER_ROLES,
+  type AddUserBody,
   type UserInput,
 } from "../types/user.types";
 import { parseId } from "../utils/number.utils";
@@ -11,21 +12,23 @@ import { createUserService, updateUserService } from "../services/user.service";
 import { findMissingFields } from "../utils/validation.utils";
 
 export const addUser = async (
-  req: Request<unknown, unknown, UserInput>,
+  req: Request<unknown, unknown, AddUserBody>,
   res: Response,
 ) => {
   const missing = findMissingFields<UserInput>(req.body, USER_REQUIRED_FIELDS);
+
+  if (missing.length) {
+    return res
+      .status(400)
+      .json({ message: `Missing fields: ${missing.join(", ")}` });
+  }
+
   const role = req.body.role ?? "customer";
 
   if (!isUserRole(role)) {
     return res
       .status(400)
       .json({ message: `role must be one of: ${USER_ROLES.join(", ")}` });
-  }
-  if (missing.length) {
-    return res
-      .status(400)
-      .json({ message: `Missing fields: ${missing.join(", ")}` });
   }
 
   const user = await createUserService(req.body, role);

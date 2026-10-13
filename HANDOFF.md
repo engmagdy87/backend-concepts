@@ -2,69 +2,65 @@
 
 ## Goal
 
-Implement auth for the shop API in stages (`docs/AUTH-PLAN.md`). Stage 1 (users + signup/login, no JWT) is done and tagged `chapter-auth-users`. Next is stage 2 (`chapter-auth-jwt`): JWT on login, `GET /me`, roles, lock `/admin`.
+Implement auth for the shop API in stages (`docs/AUTH-PLAN.md`). Stage 1 (`chapter-auth-users`) is tagged. Stage 2 (`chapter-auth-jwt`: JWT on login, `GET /auth/me`, roles, lock `/admin`) is implemented and pushed but **not tagged yet**. Current work: fixing the review list from the stage 2 change set, one point at a time with user confirmation.
 
 ## Done
 
-- Stage 1 on `main`, tag `chapter-auth-users` on `012410c`. Release: https://github.com/engmagdy87/backend-concepts/releases/tag/chapter-auth-users
-- Delete endpoints take the id in the URL, no body:
-  - `DELETE /admin/delete-product/:id` (was `POST /admin/delete-product`)
-  - `DELETE /admin/delete-user/:id` (was `DELETE /admin/delete-user`)
-  - `DeleteProductBody` / `DeleteUserBody` types removed; controllers use `Request<{ id: string }, unknown, unknown>` + `parseId(req.params.id)`.
-- `npx tsc --noEmit -p .` → `TSC_OK` after the delete change.
-- Postman local + cloud replaced (`putCollection`), item IDs kept. Cloud read-back: Delete product `DELETE {{baseUrl}}/admin/delete-product/{{productId}}`, Delete user `DELETE {{baseUrl}}/admin/delete-user/{{userId}}`.
-- `docs/AUTH-PLAN.md`: roles moved from "Nice to have" into step 6 (checklist: `users.role`, never from body, first admin via SQL, `requireAdmin` 401/403, one-line lock in `app.ts`, role from JWT vs DB).
-- `CHANGELOG.md` `[Unreleased]` → Changed: delete id in URL. `docs/LEARNING.md`: "Resource id in the path, not the body".
-- Not verified: delete endpoints never called over HTTP (no Postman/curl run). Only type-check.
+- Stage 2 on `main` and `origin/main`:
+  - `d954efc` — login issues a JWT (`{ data: { accessToken } }`, HS256, `JWT_EXPIRES_IN` seconds).
+  - `7cecc7a` — `requireAuth` middleware (`Authorization: Bearer`) → `req.user`; `GET /auth/me`.
+  - `a263ab2` — `users.role` (`customer` | `admin`), `requireAdmin` (403 `"Admins only"`), `app.use("/admin", requireAuth, requireAdmin, adminRoutes)`, role in the JWT, `verifyToken` rejects tokens without a valid role, admin add-user takes optional `role`.
+- Review fixes (local, **uncommitted**):
+  1. `controllers/users.controller.ts` — `req.body?.role` so add-user with no body returns 400, not 500.
+  2. (no change) staged/unstaged split was resolved by commit `a263ab2`.
+  3. `postman/backend-concepts.postman_collection.json` — Bearer `{{token}}` auth on the Admin and User folders (inherited by every request), descriptions updated, Add user body has `"role"`. Cloud synced via Postman REST API `PUT /collections/{uid}` and read back (auth, body, item IDs match).
+  4. `README.md` — Auth section, admin users table, delete paths fixed, `.env` setup, first-admin SQL, layout + diagram with `middlewares/`, `auth.route.ts`, user/auth services. This file rewritten.
+- `npx tsc --noEmit -p .` → `TSC_OK` after fix 1.
+- HTTP-verified against the local server (2026-10-13, 23/23 pass, throwaway `@claude-test.local` users deleted afterwards): `/admin` no/bad token 401, customer 403, admin 200; old token without `role` and unknown role 401; signup with `"role": "admin"` → `customer`; `/auth/me` 200/401; add-user no body / missing fields / bad role → 400, `role: "admin"` → 201.
 
 ## In progress
 
-- Branch `main`. This change set is committed and pushed together with this file (commit after `e2372c5`).
-- Nothing half-done. Login still returns `{ message, data: user }` — JWT not started.
+- Review point 5 done (local): `docs/AUTH-PLAN.md` step 6 now records the `ALTER TABLE users ADD COLUMN role ...` + first-admin `UPDATE` (matches `SHOW CREATE TABLE users` on the dev DB).
+- Review point 6 done (local): `requireAdmin` returns 401 when `req.user` is missing; `role` removed from `UserInput` (now `AddUserBody.role?: unknown` for add-user only, `UserOutput.role: UserRole`); `addUser` checks missing fields before `role`. `TSC_OK`.
 
 ## Files
 
-- `routes/admin.route.ts` — admin products + users routes; mount point for the future `/admin` lock.
-- `routes/auth.route.ts`, `routes/shop.route.ts`, `routes/cart.route.ts` — reviewed; stay outside `/admin`.
-- `app.ts` — mounts `/admin`, `/shop`, `/cart`, `/auth`; 404 + 500 handlers.
-- `controllers/products.controller.ts`, `controllers/users.controller.ts` — delete reads `req.params.id`.
-- `controllers/auth.controller.ts` — `signup` (400/409/201), `login` (400/401/200).
-- `services/user.service.ts` — `createUserService`, `updateUserService` (result union).
-- `models/user.model.ts` — constructor copies fields explicitly (protects future `role` from body); `toJSON()` hides `password`.
-- `types/product.types.ts`, `types/user.types.ts` — `ProductIdInput` / `UserIdInput` still exported but now unused.
-- `postman/backend-concepts.postman_collection.json` — synced with cloud UID `35152687-d8a8ccff-2ddb-4ad1-950a-5278c57b5cc8`.
-- `docs/AUTH-PLAN.md` — plan, stages, step 6 roles checklist.
+- `app.ts` — mounts `/admin` (locked), `/shop`, `/cart`, `/auth`; 404 + 500 handlers.
+- `middlewares/auth.middleware.ts` — `requireAuth`, `requireAdmin`.
+- `utils/token.utils.ts` — `signToken`, `verifyToken` (pinned HS256, validates `userId`/`email`/`role`), `requireEnv`.
+- `types/user.types.ts` — `USER_ROLES`, `UserRole`, `isUserRole`; `types/express.d.ts` — `req.user`.
+- `models/user.model.ts` — `role` enum column; constructor takes `role` as a separate argument (never from the body).
+- `services/user.service.ts` — `createUserService(userData, role = "customer")`, `updateUserService` (does not touch role).
+- `controllers/users.controller.ts` — add-user validates `role`.
+- `postman/backend-concepts.postman_collection.json` — cloud UID `35152687-d8a8ccff-2ddb-4ad1-950a-5278c57b5cc8`.
 
 ## Decisions
 
-- No endpoints move into `/admin`. `/shop` (published only), `/cart`, `/auth` are customer-facing. Future `GET /me` goes under `/auth/me` or `/me`, not `/admin`.
-- Admin products GET vs shop products GET is intentional (`fetchProducts` vs `fetchPublished`).
-- Roles are required in stage 2, not later: signup is public, so "any logged-in user" = anyone.
-- Lock `/admin` in one place: `app.use("/admin", requireAuth, requireAdmin, adminRoutes)`. 401 no/bad token, 403 not admin.
-- First admin created by SQL, never via API. Signup/add-user never accept `role` from the body.
-- Delete ids in the path: `DELETE` bodies are undefined in HTTP and may be dropped.
-- Still RPC-style paths (`/add-product`, `/delete-user/:id`, `/update-user/:id`). REST rename (`POST/PUT/DELETE /admin/products[/:id]`, same for users) suggested, not done — optional.
-- Earlier decisions (still valid): email uniqueness in service + DB unique key; update result union; full-replace `PUT` for users; `toJSON` hides hash; one login error message; `*Service` suffix; chapter tag per auth stage.
-- No chapter tag for the delete change (same-chapter HTTP tweak).
+- `/shop`, `/cart`, `/auth` stay customer-facing; only `/admin` is locked, in one place in `app.ts`.
+- Role is read from the JWT (stale until expiry, 15 minutes). Re-read from the DB later if demotion must be instant.
+- First admin by SQL, never via API. Signup is always `customer`; only admin add-user may set `role`.
+- Change-role on an existing user is a later endpoint (`PATCH`), not part of full-replace `PUT`.
+- Postman auth is set on the folders, not per request.
+- Earlier decisions (still valid): delete ids in the path; email uniqueness in service + DB unique key; update result union; `toJSON` hides hash; one login error message; `*Service` suffix; chapter tag per auth stage; RPC-style paths kept (REST rename optional).
 
 ## Constraints
 
-- Side-chat style: review/explain by default; edit files only when asked.
+- Fix review points one at a time; wait for user confirmation before the next.
+- Change locally only — do not commit or push unless asked. Push to `main` needs explicit confirmation; no force-push.
 - Short, simple-language answers, often as points.
-- Commit only when asked; no force-push. Push to `main` needs explicit user confirmation.
 - `synchronize: false` — schema changes are manual SQL.
-- Postman: local file then cloud `putCollection` on every endpoint change; keep item IDs.
+- Postman: local file, then cloud full replace on every endpoint change; keep item IDs. No Postman MCP in Claude Code — the key lives in `~/.cursor/mcp.json` (`postman-api-mcp`); use it only with the user's OK.
 - CHANGELOG + LEARNING in the same commit as finished features.
 
 ## Blocked / open
 
-- Cloud Postman drops per-request `description` on `putCollection` (reads back `null`); local file keeps them. Requests themselves match.
 - Signup reveals existing emails via 409 (accepted until email verification).
 - `findMissingFields` checks presence only: `{ "password": 123 }` passes, then bcrypt throws → 500.
 - Unused `ProductIdInput` / `UserIdInput` types — remove or keep.
+- `docs/MENTOR-BRIEFING.md` and the "This repo (snapshot)" in `docs/BACKEND-REFERENCE.md` still describe the cart chapter only.
+- Earlier note "cloud Postman drops request descriptions": not seen with the REST API `PUT` (descriptions read back fine).
 
 ## Next
 
-1. Plan step 2: login issues a JWT (`{ userId, email }`, maybe `role`; short expiry; secret from `.env`); response `{ token }`.
-2. Step 3: `middlewares/` auth middleware (`Authorization: Bearer`) → `req.user`; `GET /me`.
-3. Step 6: `users.role` + `requireAdmin`, lock `/admin`; Postman Bearer auth + `GET /me` (local + cloud); tag `chapter-auth-jwt`.
+1. Commit the review fixes when asked; then tag `chapter-auth-jwt` + GitHub Release.
+2. Stage 3 (`chapter-auth-cart`): guest cart cookie, then `carts.userId` + merge (plan steps 4–5).

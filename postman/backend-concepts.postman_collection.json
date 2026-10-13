@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "d8a8ccff-2ddb-4ad1-950a-5278c57b5cc8",
     "name": "backend-concepts",
-    "description": "Express learning API: admin products + users, shop (published), guest cart, and auth (signup/login).\n\nRun server: yarn start → [http://localhost:3040](http://localhost:3040)\n\nBody: raw JSON. Use the Local env or the collection variable `baseUrl`.\n\nAuth: login returns a JWT (`data.accessToken`, 15 minutes); the Login request saves it to the `token` variable. `GET /auth/me` requires `Authorization: Bearer {{token}}`. `/admin` is not protected yet.\n\nCart is one guest basket (`carts`) plus `cart_items`. GET/POST/DELETE `/cart` return items with `cartId`, `productId`, `quantity`, and a nested `product`. Add/remove body is still `{ productId }` (published products only).\n\nUser responses never include `password`.",
+    "description": "Express learning API: admin products + users, shop (published), guest cart, and auth (signup/login).\n\nRun server: yarn start → [http://localhost:3040](http://localhost:3040)\n\nBody: raw JSON. Use the Local env or the collection variable `baseUrl`.\n\nAuth: login returns a JWT (`data.accessToken`, 15 minutes); the Login request saves it to the `token` variable. `GET /auth/me` requires `Authorization: Bearer {{token}}`. `/admin` (the Admin and User folders) requires an **admin** token: those folders use Bearer `{{token}}`. 401 without/with a bad token, 403 `\"Admins only\"` for a customer token. The first admin is created by SQL.\n\nCart is one guest basket (`carts`) plus `cart_items`. GET/POST/DELETE `/cart` return items with `cartId`, `productId`, `quantity`, and a nested `product`. Add/remove body is still `{ productId }` (published products only).\n\nUser responses never include `password`.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -27,6 +27,17 @@
     {
       "id": "d214f54e-2a13-4b7d-971c-87ae25063687",
       "name": "Admin",
+      "description": "Admin product routes under `/admin`. Requires an admin token (Bearer `{{token}}`, inherited by every request here): 401 no/bad token, 403 not admin.",
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "{{token}}",
+            "type": "string"
+          }
+        ]
+      },
       "item": [
         {
           "id": "00bdb82e-6e80-4473-9c99-29156c6fd519",
@@ -213,7 +224,17 @@
     {
       "id": "ab8e2b0a-494f-4492-9d17-283b23a06202",
       "name": "User",
-      "description": "Admin user management under `/admin`. Not protected yet. Responses never include `password`.",
+      "description": "Admin user management under `/admin`. Requires an admin token (Bearer `{{token}}`, inherited by every request here): 401 no/bad token, 403 not admin. Responses never include `password`.",
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "{{token}}",
+            "type": "string"
+          }
+        ]
+      },
       "item": [
         {
           "id": "f83d0e76-018a-4999-8b1a-456fdccc527c",
@@ -264,14 +285,14 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"mm@test.com\",\n  \"password\": \"test123\",\n  \"firstName\": \"Mohamed\",\n  \"lastName\": \"Magdy\"\n}",
+              "raw": "{\n  \"email\": \"mm@test.com\",\n  \"password\": \"test123\",\n  \"firstName\": \"Mohamed\",\n  \"lastName\": \"Magdy\",\n  \"role\": \"customer\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
                 }
               }
             },
-            "description": "All fields required (400 lists missing ones). 409 if the email already exists. Sets `userId` on success.",
+            "description": "All fields required except `role` (400 lists missing ones). `role` is optional: `customer` (default) or `admin`; anything else → 400. 409 if the email already exists. Sets `userId` on success.",
             "url": "{{baseUrl}}/admin/add-user"
           }
         },

@@ -29,7 +29,10 @@ export const requireAdmin = (
   res: Response,
   next: NextFunction,
 ) => {
-  if (!req.user || req.user.role !== "admin") {
+  if (!req.user) {
+    return res.status(401).json({ message: "Not authenticated" });
+  }
+  if (req.user.role !== "admin") {
     return res.status(403).json({ message: "Admins only" });
   }
   next();

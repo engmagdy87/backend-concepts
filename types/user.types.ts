@@ -3,7 +3,11 @@ export interface UserInput {
   password: string;
   firstName: string;
   lastName: string;
-  role?: UserRole;
+}
+
+/** Admin add-user only. `role` is untrusted until `isUserRole` checks it. */
+export interface AddUserBody extends UserInput {
+  role?: unknown;
 }
 
 export const USER_REQUIRED_FIELDS: (keyof UserInput)[] = [
@@ -15,6 +19,7 @@ export const USER_REQUIRED_FIELDS: (keyof UserInput)[] = [
 
 export interface UserOutput extends Omit<UserInput, "password"> {
   id: number;
+  role: UserRole;
   createdAt: Date;
 }
 

@@ -66,6 +66,18 @@ Basic auth + guest cart for this shop API. Implement in order. Skip nice-to-have
 - [x] Lock the whole router in one place: `app.use("/admin", requireAuth, requireAdmin, adminRoutes)`
 - [x] Role is read from the JWT (stale until expiry — 15 minutes). Re-read from the DB later if demotion must be instant
 
+SQL run for this step (MySQL; enum values must match `USER_ROLES`):
+
+```sql
+ALTER TABLE users
+  ADD COLUMN role ENUM('customer', 'admin') NOT NULL DEFAULT 'customer';
+
+-- First admin (existing rows got 'customer' from the default)
+UPDATE users SET role = 'admin' WHERE email = 'you@example.com';
+```
+
+Admins already logged in must log in again: older tokens have no `role` and get **401**.
+
 Why roles are here and not "later": signup is public, so "any logged-in user" means anyone can sign up and manage users/products.
 
 ---
