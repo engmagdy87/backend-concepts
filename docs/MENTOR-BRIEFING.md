@@ -6,7 +6,7 @@ TypeScript Express learning API. Persistence path: JSON → mysql2 → **TypeORM
 | --- | --- |
 | Entities | 3 (Cart, CartItem, Product) |
 | Store | MySQL |
-| Cart mode | Guest (one `carts` row) |
+| Cart mode | One cart per owner: guest cookie (`guestToken`) or logged-in user (`userId`) |
 | Add / remove | ±1 quantity on the line |
 
 ## ERD (current)
@@ -17,9 +17,9 @@ TypeScript Express learning API. Persistence path: JSON → mysql2 → **TypeORM
 │ carts       │─────────│ cart_items       │─────────│ products        │
 ├─────────────┤         ├──────────────────┤         ├─────────────────┤
 │ id PK       │         │ id PK            │         │ id PK           │
-└─────────────┘         │ cartId FK        │         │ title           │
-                        │ productId FK     │         │ price           │
-                        │ quantity         │         │ description     │
+│ guestToken U│         │ cartId FK        │         │ title           │
+│ userId U FK │         │ productId FK     │         │ price           │
+└─────────────┘         │ quantity         │         │ description     │
                         └──────────────────┘         │ imageUrl        │
                                                      │ isPublished     │
                                                      └─────────────────┘
@@ -27,7 +27,7 @@ TypeScript Express learning API. Persistence path: JSON → mysql2 → **TypeORM
 
 - **Cart 1 — * CartItem * — 1 Product**
 - Unique `(cartId, productId)` on `cart_items`
-- Guest setup: one `carts` row; no `users` / `userId` yet
+- Cart owner: `UNIQUE guestToken` (from the `HttpOnly` `guestCart` cookie) or `UNIQUE userId` (FK → `users`)
 - Schema: manual SQL (`synchronize: false`)
 - Relations (`items`, `cart`, `product`, `cartItems`) are TypeORM links, not extra columns
 

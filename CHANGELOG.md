@@ -21,6 +21,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `users.role` (`customer` | `admin`, default `customer`); first admin created by SQL
 - `requireAdmin` middleware: **403** `"Admins only"` when the token is valid but the role is not `admin`
 - `POST /admin/add-user` optional `role` (checked against `USER_ROLES`; omitted → `customer`)
+- `optionalAuth` middleware: no `Authorization` header → continue as guest; a header that is present must be valid (**401** otherwise)
+- `resolveCartOwner` middleware (`middlewares/cart-owner.middleware.ts`): logged-in → cart by `userId`; guest → `guestCart` cookie (32 random bytes, `HttpOnly`, `SameSite=Lax`, `Path=/cart`, 30 days, `Secure` in production)
+- `carts.guestToken` and `carts.userId` (both `UNIQUE`, `userId` FK → `users.id` `ON DELETE CASCADE`); SQL in `docs/AUTH-PLAN.md`
+- `cookie-parser` dependency
 
 ### Fixed
 - `POST /admin/delete-product` returns `400` instead of `500` when the request has no JSON body
@@ -29,6 +33,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `GET /admin/products` and get-by-id return `isPublished` as `true`/`false` (MySQL stores `TINYINT` 0/1)
 - `POST /cart/items` awaits the product lookup (add-to-cart was treating the Promise as a missing product)
 - `POST /admin/delete-product` returns `404` when no MySQL row matches
+- Every visitor shared one cart (`find({ take: 1 })`): carts are now looked up by owner with `Cart.getOrCreate(owner)`; concurrent first requests for the same owner create one row (duplicate-key → re-read)
 
 ### Changed
 - `/admin` is locked: `app.use("/admin", requireAuth, requireAdmin, adminRoutes)` — **401** missing/bad token, **403** not admin

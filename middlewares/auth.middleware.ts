@@ -1,27 +1,45 @@
 import { NextFunction, Request, Response } from "express";
 import { verifyToken } from "../utils/token.utils";
 
-export const requireAuth = (
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) => {
+/** Verifies the Bearer token and sets `req.user`; sends 401 and returns false on failure. */
+const authenticate = (req: Request, res: Response): boolean => {
   const [scheme, token] = req.headers.authorization?.split(" ") ?? [];
 
   if (scheme?.toLowerCase() !== "bearer" || !token) {
-    return res
-      .status(401)
-      .json({ message: "Missing or malformed Authorization header" });
+    res.status(401).json({ message: "Missing or malformed Authorization header" });
+    return false;
   }
 
   const payload = verifyToken(token);
 
   if (!payload) {
-    return res.status(401).json({ message: "Invalid or expired token" });
+    res.status(401).json({ message: "Invalid or expired token" });
+    return false;
   }
 
   req.user = payload;
-  next();
+  return true;
+};
+
+export const requireAuth = (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  if (authenticate(req, res)) {
+    next();
+  }
+};
+
+/** No Authorization header → continue as guest. A header that's present must be valid. */
+export const optionalAuth = (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  if (!req.headers.authorization || authenticate(req, res)) {
+    next();
+  }
 };
 
 export const requireAdmin = (

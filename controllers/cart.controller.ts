@@ -7,15 +7,15 @@ import {
 } from "../services/cart.service";
 import type { AddToCartBody, RemoveFromCartBody } from "../types/cart.types";
 
-export const getCart = async (_req: Request, res: Response) => {
-  res.json({ data: await getCartService() });
+export const getCart = async (req: Request, res: Response) => {
+  res.json({ data: await getCartService(req.cartOwner!) });
 };
 
 export const addToCart = async (
   req: Request<unknown, unknown, AddToCartBody>,
   res: Response,
 ) => {
-  const result = await addToCartService(req.body.productId);
+  const result = await addToCartService(req.cartOwner!, req.body.productId);
 
   if (!result.ok) {
     return res.status(404).json({
@@ -33,7 +33,7 @@ export const removeFromCart = async (
   req: Request<unknown, unknown, RemoveFromCartBody>,
   res: Response,
 ) => {
-  const cart = await removeFromCartService(req.body.productId);
+  const cart = await removeFromCartService(req.cartOwner!, req.body.productId);
 
   if (cart === undefined) {
     return res.status(400).json({
@@ -47,8 +47,8 @@ export const removeFromCart = async (
   });
 };
 
-export const clearCart = async (_req: Request, res: Response) => {
-  const cart = await clearCartService();
+export const clearCart = async (req: Request, res: Response) => {
+  const cart = await clearCartService(req.cartOwner!);
   res.json({
     message: "Cart cleared",
     data: cart,

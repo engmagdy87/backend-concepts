@@ -1,10 +1,11 @@
 import Cart from "../models/cart.model";
 import CartItem from "../models/cart-item.model";
 import Product from "../models/product.model";
-import type { AddToCartResult } from "../types/cart.types";
+import type { AddToCartResult, CartOwner } from "../types/cart.types";
 import { parseId } from "../utils/number.utils";
 
 export const addToCartService = async (
+  owner: CartOwner,
   productId: unknown,
 ): Promise<AddToCartResult> => {
   const parsedProductId = parseId(productId);
@@ -18,17 +19,18 @@ export const addToCartService = async (
     return { ok: false, reason: "not_found" };
   }
 
-  const cart = await Cart.getOrCreateGuest();
+  const cart = await Cart.getOrCreate(owner);
   await CartItem.addToCart(cart.id, parsedProductId);
   return { ok: true, cart: await CartItem.listForCart(cart.id) };
 };
 
-export const getCartService = async (): Promise<CartItem[]> => {
-  const cart = await Cart.getOrCreateGuestWithItems();
+export const getCartService = async (owner: CartOwner): Promise<CartItem[]> => {
+  const cart = await Cart.getOrCreate(owner, { withItems: true });
   return cart.items ?? [];
 };
 
 export const removeFromCartService = async (
+  owner: CartOwner,
   productId: unknown,
 ): Promise<CartItem[] | undefined> => {
   const parsedProductId = parseId(productId);
@@ -36,13 +38,13 @@ export const removeFromCartService = async (
     return undefined;
   }
 
-  const cart = await Cart.getOrCreateGuest();
+  const cart = await Cart.getOrCreate(owner);
   await CartItem.removeFromCart(cart.id, parsedProductId);
   return CartItem.listForCart(cart.id);
 };
 
-export const clearCartService = async (): Promise<CartItem[]> => {
-  const cart = await Cart.getOrCreateGuest();
+export const clearCartService = async (owner: CartOwner): Promise<CartItem[]> => {
+  const cart = await Cart.getOrCreate(owner);
   await CartItem.clearForCart(cart.id);
   return CartItem.listForCart(cart.id);
 };

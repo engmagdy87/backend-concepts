@@ -16,3 +16,6 @@ export interface RemoveFromCartBody {
 export type AddToCartResult =
   | { ok: true; cart: CartItem[] }
   | { ok: false; reason: "not_found" };
+
+/** Who a cart belongs to: a logged-in user, or a guest identified by the `guestCart` cookie. */
+export type CartOwner = { userId: number } | { guestToken: string };

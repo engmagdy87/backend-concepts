@@ -8,7 +8,7 @@ Basic auth + guest cart for this shop API. Implement in order. Skip nice-to-have
 | --- | --- |
 | Guest | Cart cookie (opaque id → server finds/creates cart). No Redis yet. |
 | Logged-in | JWT access token in `Authorization` (easy with Postman). |
-| Next | Link cart to `userId`; merge guest cart on login. |
+| Next | Merge guest cart into the user cart on login (cart is already per-user / per-guest-cookie). |
 | Skip for v1 | Refresh tokens, Redis sessions, OAuth, email verify. |
 
 ---
@@ -46,15 +46,30 @@ Basic auth + guest cart for this shop API. Implement in order. Skip nice-to-have
 
 ### 4. Guest cart cookie (before / without signup)
 
-- [ ] On first cart touch: create cart row → `Set-Cookie` with opaque guest/cart id (`HttpOnly`)
-- [ ] `getOrCreateGuest` becomes “find cart for this cookie,” not “one shared row”
-- [ ] Client still sends only `productId` on add/remove — never `cartId` in the body
+- [x] On first cart touch: `Set-Cookie: guestCart=<32 random bytes, base64url>` (`HttpOnly`, `SameSite=Lax`, `Path=/cart`, 30 days, `Secure` in production) — `middlewares/cart-owner.middleware.ts`
+- [x] `Cart.getOrCreate(owner)` finds the cart for this cookie (`carts.guestToken`), not “one shared row”. `UNIQUE` keys turn the get-or-create race into a caught duplicate-key error + re-read
+- [x] Client still sends only `productId` on add/remove — never `cartId` in the body
 
 ### 5. Tie cart to user (after login works)
 
-- [ ] Add nullable `carts.userId`
+- [x] Add nullable `carts.userId`
 - [ ] On login (and/or signup): find guest cart from cookie → attach/merge to that user’s cart
-- [ ] Logged-in `GET /cart` resolves by `userId`; guest still by cookie
+- [x] Logged-in `/cart` (Bearer token, via `optionalAuth`) resolves by `userId`; guest still by cookie. A Bearer header that is present but invalid → **401** (no silent fallback to the guest cart)
+
+SQL run for steps 4–5 (MySQL):
+
+```sql
+ALTER TABLE carts
+  ADD COLUMN guestToken CHAR(43) NULL,
+  ADD COLUMN userId INT UNSIGNED NULL, -- must match users.id (INT UNSIGNED) for the FK
+  ADD CONSTRAINT uq_carts_guest_token UNIQUE (guestToken),
+  ADD CONSTRAINT uq_carts_user_id UNIQUE (userId),
+  ADD CONSTRAINT fk_carts_user FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE;
+
+-- The old shared guest row (both NULL) can never be matched again
+DELETE FROM cart_items WHERE cartId IN (SELECT id FROM carts WHERE guestToken IS NULL AND userId IS NULL);
+DELETE FROM carts WHERE guestToken IS NULL AND userId IS NULL;
+```
 
 ### 6. Protect what needs it — done
 
