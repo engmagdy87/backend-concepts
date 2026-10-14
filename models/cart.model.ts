@@ -72,6 +72,33 @@ class Cart {
       throw err;
     }
   }
+
+  /**
+   * Gives the guest cart to a user who has no cart yet (basic attach, no merge).
+   * Returns true if the guest cart now belongs to the user.
+   */
+  static async attachGuestCart(
+    guestToken: string,
+    userId: number,
+  ): Promise<boolean> {
+    if (await cartRepository().existsBy({ userId })) {
+      return false; // user already has a cart: leave both alone (merge comes later)
+    }
+
+    try {
+      const result = await cartRepository().update(
+        { guestToken },
+        { userId, guestToken: null },
+      );
+      return Boolean(result.affected);
+    } catch (err) {
+      // A parallel request just created this user's cart (UNIQUE userId).
+      if (isDuplicateKeyError(err)) {
+        return false;
+      }
+      throw err;
+    }
+  }
 }
 
 export default Cart;

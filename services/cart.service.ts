@@ -24,6 +24,11 @@ export const addToCartService = async (
   return { ok: true, cart: await CartItem.listForCart(cart.id) };
 };
 
+export const attachGuestCartService = (
+  guestToken: string,
+  userId: number,
+): Promise<boolean> => Cart.attachGuestCart(guestToken, userId);
+
 export const getCartService = async (owner: CartOwner): Promise<CartItem[]> => {
   const cart = await Cart.getOrCreate(owner, { withItems: true });
   return cart.items ?? [];

@@ -8,7 +8,7 @@ Basic auth + guest cart for this shop API. Implement in order. Skip nice-to-have
 | --- | --- |
 | Guest | Cart cookie (opaque id → server finds/creates cart). No Redis yet. |
 | Logged-in | JWT access token in `Authorization` (easy with Postman). |
-| Next | Merge guest cart into the user cart on login (cart is already per-user / per-guest-cookie). |
+| Next | Cart chapter done (per-user / per-guest-cookie cart, guest cart attached after login). Merge rules are in “Nice to have”. |
 | Skip for v1 | Refresh tokens, Redis sessions, OAuth, email verify. |
 
 ---
@@ -53,7 +53,7 @@ Basic auth + guest cart for this shop API. Implement in order. Skip nice-to-have
 ### 5. Tie cart to user (after login works)
 
 - [x] Add nullable `carts.userId`
-- [ ] On login (and/or signup): find guest cart from cookie → attach/merge to that user’s cart
+- [x] After login: guest cart from the cookie → attached to the user if they have no cart yet (`Cart.attachGuestCart`). Happens on the first `/cart` request with a token, because the cookie is `Path=/cart` and never reaches `/auth/login`. Cookie is cleared after attach. If the user already has a cart, both are left alone (merge rules are in “Nice to have”)
 - [x] Logged-in `/cart` (Bearer token, via `optionalAuth`) resolves by `userId`; guest still by cookie. A Bearer header that is present but invalid → **401** (no silent fallback to the guest cart)
 
 SQL run for steps 4–5 (MySQL):

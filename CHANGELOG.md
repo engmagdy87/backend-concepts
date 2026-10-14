@@ -25,6 +25,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `resolveCartOwner` middleware (`middlewares/cart-owner.middleware.ts`): logged-in → cart by `userId`; guest → `guestCart` cookie (32 random bytes, `HttpOnly`, `SameSite=Lax`, `Path=/cart`, 30 days, `Secure` in production)
 - `carts.guestToken` and `carts.userId` (both `UNIQUE`, `userId` FK → `users.id` `ON DELETE CASCADE`); SQL in `docs/AUTH-PLAN.md`
 - `cookie-parser` dependency
+- Guest cart is attached to the user on their first `/cart` request after login when the user has no cart yet (`Cart.attachGuestCart`); the `guestCart` cookie is then cleared. If the user already has a cart, both carts are kept as they are
 
 ### Fixed
 - `POST /admin/delete-product` returns `400` instead of `500` when the request has no JSON body

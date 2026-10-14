@@ -4,6 +4,15 @@ Notes on backend concepts practiced in this repo. Newest entries first.
 
 Update this file when a feature teaches a concept worth keeping. Skip chores, formatting-only changes, and WIP commits.
 
+## 2026-10-14 — One cart per owner (guest cookie or user)
+
+- "Give me the first row" is not a lookup. Every query for someone's data needs a `where` with *their* key. The old `find({ take: 1 })` gave every visitor the same cart.
+- A guest has no account, so the server hands out an id: a long random token in an `HttpOnly` cookie. `HttpOnly` means page JavaScript can't read it; `Path=/cart` means the browser only sends it to `/cart`.
+- Logged in → `userId` from the token; guest → token from the cookie. Both are `UNIQUE` columns on `carts`, so one owner can never get two carts. The database rule is the real guarantee, not the `if` in our code.
+- `optionalAuth`: no header is fine (guest), but a header that's present must be valid (**401**). Silently treating a bad token as a guest would hide bugs.
+- After login, the guest cart is *attached* (its `userId` is set), not copied. That happens on the first `/cart` request, because the cookie path means `/auth/login` never sees the cookie. Merging two carts is a later step.
+- A foreign key column must have exactly the same type as the column it points to: `users.id` is `INT UNSIGNED`, so `carts.userId` must be too (MySQL error 3780).
+
 ## 2026-10-11 — Roles and locking `/admin`
 
 - "Logged in" is not "allowed". Signup is public, so `requireAuth` alone would let any customer manage users. `requireAdmin` after it: **401** who are you, **403** I know you and you may not.

@@ -2,65 +2,63 @@
 
 ## Goal
 
-Implement auth for the shop API in stages (`docs/AUTH-PLAN.md`). Stage 1 (`chapter-auth-users`) is tagged. Stage 2 (`chapter-auth-jwt`: JWT on login, `GET /auth/me`, roles, lock `/admin`) is implemented and pushed but **not tagged yet**. Current work: fixing the review list from the stage 2 change set, one point at a time with user confirmation.
+Implement auth for the shop API in stages (`docs/AUTH-PLAN.md`). Stages 1–2 are tagged and released (`chapter-auth-users`, `chapter-auth-jwt`). Stage 3 (`chapter-auth-cart`: a cart per guest or user) is implemented on branch `fix/per-owner-cart` and waiting for the user's review. After that: merge → push → tag + release.
 
 ## Done
 
-- Stage 2 on `main` and `origin/main`:
-  - `d954efc` — login issues a JWT (`{ data: { accessToken } }`, HS256, `JWT_EXPIRES_IN` seconds).
-  - `7cecc7a` — `requireAuth` middleware (`Authorization: Bearer`) → `req.user`; `GET /auth/me`.
-  - `a263ab2` — `users.role` (`customer` | `admin`), `requireAdmin` (403 `"Admins only"`), `app.use("/admin", requireAuth, requireAdmin, adminRoutes)`, role in the JWT, `verifyToken` rejects tokens without a valid role, admin add-user takes optional `role`.
-- Review fixes (local, **uncommitted**):
-  1. `controllers/users.controller.ts` — `req.body?.role` so add-user with no body returns 400, not 500.
-  2. (no change) staged/unstaged split was resolved by commit `a263ab2`.
-  3. `postman/backend-concepts.postman_collection.json` — Bearer `{{token}}` auth on the Admin and User folders (inherited by every request), descriptions updated, Add user body has `"role"`. Cloud synced via Postman REST API `PUT /collections/{uid}` and read back (auth, body, item IDs match).
-  4. `README.md` — Auth section, admin users table, delete paths fixed, `.env` setup, first-admin SQL, layout + diagram with `middlewares/`, `auth.route.ts`, user/auth services. This file rewritten.
-- `npx tsc --noEmit -p .` → `TSC_OK` after fix 1.
-- HTTP-verified against the local server (2026-10-13, 23/23 pass, throwaway `@claude-test.local` users deleted afterwards): `/admin` no/bad token 401, customer 403, admin 200; old token without `role` and unknown role 401; signup with `"role": "admin"` → `customer`; `/auth/me` 200/401; add-user no body / missing fields / bad role → 400, `role: "admin"` → 201.
+- **Stage 2 released:** `main` pushed (`0d6a67c`), and GitHub Release `chapter-auth-jwt` published on `0d6a67c` (2026-10-14).
+- **Review file:** `CODE_REVIEW.md` (untracked). It was rewritten 2026-10-14 with "When: Now / Next / Later" labels for a learning project, and a status board.
+- **Stage 3 on branch `fix/per-owner-cart`:**
+  - `d5d083d` (committed, C1): `carts.guestToken` / `carts.userId` (both `UNIQUE`, `userId INT UNSIGNED` FK → `users.id`). `optionalAuth`, `resolveCartOwner` (`HttpOnly` `guestCart` cookie, `Path=/cart`, 30 days), `Cart.getOrCreate(owner)` with duplicate-key retry, `cookie-parser`. The user ran the SQL on the dev DB.
+  - **Uncommitted (C1a):** `Cart.attachGuestCart` + `attachGuestCartService`. On the first `/cart` request with a token and the guest cookie, the guest cart goes to the user if they have no cart yet, and the cookie is cleared. If the user already has a cart, both are left alone. Also updated: README, AUTH-PLAN (step 5 ticked), CHANGELOG, LEARNING (2026-10-14 entry), and the Postman collection (Cart descriptions + new "Get cart (logged in)" request).
+  - HTTP-verified by hand: separate guest carts, user cart, 401 on a bad token, one cart after parallel first requests, attach after login, existing user cart left alone. Test users and carts were deleted afterwards; `carts` is empty.
+- **Postman cloud synced** 2026-10-14 via the REST API `PUT` (full replace; read back: item ids and descriptions match). Before the PUT, the cloud copy matched the committed local file.
+- **`CLAUDE.md`** added (uncommitted). It imports `.cursor/rules/*.mdc`, so Claude Code follows the same rules.
 
 ## In progress
 
-- Review point 5 done (local): `docs/AUTH-PLAN.md` step 6 now records the `ALTER TABLE users ADD COLUMN role ...` + first-admin `UPDATE` (matches `SHOW CREATE TABLE users` on the dev DB).
-- Review point 6 done (local): `requireAdmin` returns 401 when `req.user` is missing; `role` removed from `UserInput` (now `AddUserBody.role?: unknown` for add-user only, `UserOutput.role: UserRole`); `addUser` checks missing fields before `role`. `TSC_OK`.
-
-## Files
-
-- `app.ts` — mounts `/admin` (locked), `/shop`, `/cart`, `/auth`; 404 + 500 handlers.
-- `middlewares/auth.middleware.ts` — `requireAuth`, `requireAdmin`.
-- `utils/token.utils.ts` — `signToken`, `verifyToken` (pinned HS256, validates `userId`/`email`/`role`), `requireEnv`.
-- `types/user.types.ts` — `USER_ROLES`, `UserRole`, `isUserRole`; `types/express.d.ts` — `req.user`.
-- `models/user.model.ts` — `role` enum column; constructor takes `role` as a separate argument (never from the body).
-- `services/user.service.ts` — `createUserService(userData, role = "customer")`, `updateUserService` (does not touch role).
-- `controllers/users.controller.ts` — add-user validates `role`.
-- `postman/backend-concepts.postman_collection.json` — cloud UID `35152687-d8a8ccff-2ddb-4ad1-950a-5278c57b5cc8`.
+- Waiting for the user to review the uncommitted C1a changes, `CLAUDE.md`, and this file.
 
 ## Decisions
 
-- `/shop`, `/cart`, `/auth` stay customer-facing; only `/admin` is locked, in one place in `app.ts`.
-- Role is read from the JWT (stale until expiry, 15 minutes). Re-read from the DB later if demotion must be instant.
-- First admin by SQL, never via API. Signup is always `customer`; only admin add-user may set `role`.
-- Change-role on an existing user is a later endpoint (`PATCH`), not part of full-replace `PUT`.
-- Postman auth is set on the folders, not per request.
-- Earlier decisions (still valid): delete ids in the path; email uniqueness in service + DB unique key; update result union; `toJSON` hides hash; one login error message; `*Service` suffix; chapter tag per auth stage; RPC-style paths kept (REST rename optional).
+- **Attach happens on `/cart`, not in `/auth/login`:** the cookie has `Path=/cart`, so `/auth/login` never sees it.
+- **Basic attach only.** Combining two carts (summing quantities) stays in AUTH-PLAN's "Nice to have".
+- **`optionalAuth`:** no header → guest; a header that's present but bad → 401 (no silent fallback to the guest cart).
+- **H5 (parallel add/remove lost updates) is parked as "Later".** An atomic-SQL + row-lock fix was written, then undone at the user's request as too advanced for now. The simple `increment`/`decrement` version is noted in `CODE_REVIEW.md`.
+- **Earlier decisions (still valid):**
+  - The role comes from the JWT.
+  - The first admin is created by SQL.
+  - Delete ids go in the path.
+  - RPC-style paths are kept.
+  - Postman auth is set on folders.
+  - One chapter tag per auth stage.
 
 ## Constraints
 
-- Fix review points one at a time; wait for user confirmation before the next.
-- Change locally only — do not commit or push unless asked. Push to `main` needs explicit confirmation; no force-push.
-- Short, simple-language answers, often as points.
-- `synchronize: false` — schema changes are manual SQL.
-- Postman: local file, then cloud full replace on every endpoint change; keep item IDs. No Postman MCP in Claude Code — the key lives in `~/.cursor/mcp.json` (`postman-api-mcp`); use it only with the user's OK.
-- CHANGELOG + LEARNING in the same commit as finished features.
+- **Learning project:** explain in simple language and keep fixes basic; label advanced topics "later".
+- **One step at a time:** fix review points one at a time and wait for confirmation.
+- **No unasked commits:** don't commit or push unless asked. Push to `main` needs explicit confirmation.
+- **Manual schema:** `synchronize: false`, so schema changes are manual SQL that the user runs.
+- **Postman:** update the local file, then do a cloud full replace on every endpoint change. The key is in `~/.cursor/mcp.json`; use it only with the user's OK.
+- **Docs with code:** CHANGELOG + LEARNING go in the same commit as finished features.
 
 ## Blocked / open
 
-- Signup reveals existing emails via 409 (accepted until email verification).
-- `findMissingFields` checks presence only: `{ "password": 123 }` passes, then bcrypt throws → 500.
-- Unused `ProductIdInput` / `UserIdInput` types — remove or keep.
-- `docs/MENTOR-BRIEFING.md` and the "This repo (snapshot)" in `docs/BACKEND-REFERENCE.md` still describe the cart chapter only.
-- Earlier note "cloud Postman drops request descriptions": not seen with the REST API `PUT` (descriptions read back fine).
+- **`chapter-auth-jwt` is a lightweight tag.** The chapter-releases rule wants an annotated tag. Replacing it needs a force-push of the tag, which Claude Code's permission check blocked. The user can run:
+  ```bash
+  git tag -f -a chapter-auth-jwt 0d6a67c -m "Auth stage 2: JWT on login, GET /auth/me, roles, /admin locked to admins"
+  git push --force origin refs/tags/chapter-auth-jwt
+  ```
+- **Leftovers from the review:**
+  - C1b: empty guest carts pile up.
+  - Signup reveals existing emails via 409 (accepted).
+  - `findMissingFields` checks presence only (H3).
+  - Unused `ProductIdInput` / `UserIdInput`.
+- **`docs/BACKEND-REFERENCE.md`:** the "This repo (snapshot)" section is out of date. Only update it when the user asks for the mentor/notebook.
 
 ## Next
 
-1. Commit the review fixes when asked; then tag `chapter-auth-jwt` + GitHub Release.
-2. Stage 3 (`chapter-auth-cart`): guest cart cookie, then `carts.userId` + merge (plan steps 4–5).
+1. After the user's review: commit C1a + docs + Postman + `CLAUDE.md` on `fix/per-owner-cart`.
+2. Merge into `main` and push (with confirmation).
+3. Create the annotated tag `chapter-auth-cart` and the GitHub Release (same style as earlier releases).
+4. Then the quick wins from `CODE_REVIEW.md`: H1, M1, M12, L3, L4.

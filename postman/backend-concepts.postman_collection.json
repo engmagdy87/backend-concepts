@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "d8a8ccff-2ddb-4ad1-950a-5278c57b5cc8",
     "name": "backend-concepts",
-    "description": "Express learning API: admin products + users, shop (published), guest cart, and auth (signup/login).\n\nRun server: yarn start → [http://localhost:3040](http://localhost:3040)\n\nBody: raw JSON. Use the Local env or the collection variable `baseUrl`.\n\nAuth: login returns a JWT (`data.accessToken`, 15 minutes); the Login request saves it to the `token` variable. `GET /auth/me` requires `Authorization: Bearer {{token}}`. `/admin` (the Admin and User folders) requires an **admin** token: those folders use Bearer `{{token}}`. 401 without/with a bad token, 403 `\"Admins only\"` for a customer token. The first admin is created by SQL.\n\nCart is one guest basket (`carts`) plus `cart_items`. GET/POST/DELETE `/cart` return items with `cartId`, `productId`, `quantity`, and a nested `product`. Add/remove body is still `{ productId }` (published products only).\n\nUser responses never include `password`.",
+    "description": "Express learning API: admin products + users, shop (published), cart (per guest or per user), and auth (signup/login).\n\nRun server: yarn start → [http://localhost:3040](http://localhost:3040)\n\nBody: raw JSON. Use the Local env or the collection variable `baseUrl`.\n\nAuth: login returns a JWT (`data.accessToken`, 15 minutes); the Login request saves it to the `token` variable. `GET /auth/me` requires `Authorization: Bearer {{token}}`. `/admin` (the Admin and User folders) requires an **admin** token: those folders use Bearer `{{token}}`. 401 without/with a bad token, 403 `\"Admins only\"` for a customer token. The first admin is created by SQL.\n\nCart: each guest or logged-in user has their own cart (`carts`) plus `cart_items`. Guest requests (no `Authorization`) get an `HttpOnly` `guestCart` cookie on the first `/cart` call; Postman keeps and resends it automatically. With `Authorization: Bearer {{token}}` you get the user's cart (bad token → 401). The first `/cart` call with a token and the guest cookie moves the guest cart to the user if they have no cart yet. GET/POST/DELETE `/cart` return items with `cartId`, `productId`, `quantity`, and a nested `product`. Add/remove body is still `{ productId }` (published products only).\n\nUser responses never include `password`.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -159,7 +159,7 @@
     {
       "id": "27feb030-c248-4ea4-a07a-73f75d638522",
       "name": "Cart",
-      "description": "One guest cart. Responses are the item list. Each item includes `cartId`, `productId`, `quantity`, and a nested `product`.",
+      "description": "Per-owner cart. Requests in this folder run as a **guest**: the first call sets the `guestCart` cookie (`Path=/cart`, `HttpOnly`) and Postman sends it back. Use **Get cart (logged in)** to see the user's cart (`Bearer {{token}}`; run Login first). After login, that first call moves the guest cart to the user if the user has no cart yet, and clears the cookie. Responses are the item list: `cartId`, `productId`, `quantity`, and a nested `product`.",
       "item": [
         {
           "id": "575a0566-ef80-43e7-b57f-ea65b6efab46",
@@ -167,7 +167,22 @@
           "request": {
             "method": "GET",
             "header": [],
-            "description": "List items in the guest cart. `data` is `[{ id, cartId, productId, quantity, product }]`.",
+            "description": "Items in this guest's cart (from the `guestCart` cookie; a new cookie and empty cart on the first call). `data` is `[{ id, cartId, productId, quantity, product }]`.",
+            "url": "{{baseUrl}}/cart"
+          }
+        },
+        {
+          "id": "8cffe7f1-ea3b-4a47-8a58-6f50e1549347",
+          "name": "Get cart (logged in)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "description": "The logged-in user's cart (run Login first). If the `guestCart` cookie is also sent and the user has no cart yet, the guest cart becomes the user's cart and the cookie is cleared. 401 if the token is malformed, invalid, or expired.",
             "url": "{{baseUrl}}/cart"
           }
         },
@@ -215,7 +230,7 @@
           "request": {
             "method": "DELETE",
             "header": [],
-            "description": "Empty the guest cart (deletes its items; the cart row stays).",
+            "description": "Empty this owner's cart (deletes its items; the cart row stays).",
             "url": "{{baseUrl}}/cart"
           }
         }
