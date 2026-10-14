@@ -12,6 +12,8 @@ import { requireAdmin, requireAuth } from "./middlewares/auth.middleware";
 
 const app = express();
 
+app.disable("x-powered-by"); // don't tell clients which framework we run
+
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 
@@ -26,10 +28,27 @@ app.use((_req, res) => {
   });
 });
 
-app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
-  console.error(err);
-  res.status(500).json({ message: "Internal server error" });
-});
+// Errors can carry an HTTP status (e.g. body-parser: 400 bad JSON, 413 body
+// too large). 4xx = the client's mistake: send that status. Anything else is
+// our bug: log it and send 500 without details.
+app.use(
+  (
+    err: Error & { status?: number; expose?: boolean },
+    _req: Request,
+    res: Response,
+    _next: NextFunction,
+  ) => {
+    const status =
+      err.status && err.status >= 400 && err.status < 500 ? err.status : 500;
+
+    if (status === 500) {
+      console.error(err);
+      return res.status(500).json({ message: "Internal server error" });
+    }
+
+    res.status(status).json({ message: err.expose ? err.message : "Bad request" });
+  },
+);
 
 async function start() {
   await AppDataSource.initialize();

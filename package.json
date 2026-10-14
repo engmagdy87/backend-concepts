@@ -13,7 +13,7 @@
     "typescript": "5.9.2"
   },
   "scripts": {
-    "start": "nodemon --ext ts,json --exec tsx app.ts",
+    "start": "NODE_ENV=development nodemon --ext ts,json --exec tsx app.ts",
     "build": "tsc"
   },
   "dependencies": {

@@ -4,6 +4,14 @@ Notes on backend concepts practiced in this repo. Newest entries first.
 
 Update this file when a feature teaches a concept worth keeping. Skip chores, formatting-only changes, and WIP commits.
 
+## 2026-10-14 — Small safety habits
+
+- Logs are data too. SQL query logs print the values, so every login wrote an email and a password hash to the terminal. Turn them on only in development (`NODE_ENV=development`, set by `yarn start`).
+- 4xx means the client made a mistake, 5xx means the server did. Broken JSON is a client mistake: body-parser marks it `status: 400`, so the error handler now passes that on instead of always sending 500. Real bugs still get a generic 500, so internals stay hidden.
+- Check config when the app starts, not when it's first used: a `JWT_SECRET` shorter than 32 characters stops the server immediately with a clear message.
+- Don't advertise your stack: `app.disable("x-powered-by")`.
+- One package manager, one lockfile. A stale `package-lock.json` next to `yarn.lock` gives anyone running `npm install` a different, broken install.
+
 ## 2026-10-14 — One cart per owner (guest cookie or user)
 
 - "Give me the first row" is not a lookup. Every query for someone's data needs a `where` with *their* key. The old `find({ take: 1 })` gave every visitor the same cart.

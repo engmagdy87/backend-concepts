@@ -9,7 +9,10 @@ export const AppDataSource = new DataSource({
   database: process.env.DB_NAME,
   entities: [__dirname + "/../models/*.model.ts"],
   synchronize: false,
-  logging: true,
+  // Query logs include parameter values (emails, password hashes), so only
+  // log queries in development. Everywhere else, log errors only.
+  logging:
+    process.env.NODE_ENV === "development" ? ["query", "error"] : ["error"],
 });
 
 export default AppDataSource;

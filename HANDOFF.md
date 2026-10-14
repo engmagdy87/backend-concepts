@@ -2,22 +2,24 @@
 
 ## Goal
 
-Implement auth for the shop API in stages (`docs/AUTH-PLAN.md`). Stages 1–2 are tagged and released (`chapter-auth-users`, `chapter-auth-jwt`). Stage 3 (`chapter-auth-cart`: a cart per guest or user) is implemented on branch `fix/per-owner-cart` and waiting for the user's review. After that: merge → push → tag + release.
+Auth stages 1–3 are done, tagged, and released (`chapter-auth-users`, `chapter-auth-jwt`, `chapter-auth-cart`). Next: quick wins from `CODE_REVIEW.md`, then input validation.
 
 ## Done
 
+- **Quick wins (2026-10-14, on `main`):** H1, M1, M12, L3, L4 from `CODE_REVIEW.md`, hand-tested. `yarn start` now sets `NODE_ENV=development` (query logs on); without it, only errors are logged. No chapter tag (small fixes inside the current era).
+- **Stage 3 released:** `fix/per-owner-cart` fast-forwarded into `main` and pushed (`2c73c8c`); annotated tag + GitHub Release `chapter-auth-cart` (2026-10-14).
 - **Stage 2 released:** `main` pushed (`0d6a67c`), and GitHub Release `chapter-auth-jwt` published on `0d6a67c` (2026-10-14).
 - **Review file:** `CODE_REVIEW.md` (untracked). It was rewritten 2026-10-14 with "When: Now / Next / Later" labels for a learning project, and a status board.
 - **Stage 3 on branch `fix/per-owner-cart`:**
   - `d5d083d` (committed, C1): `carts.guestToken` / `carts.userId` (both `UNIQUE`, `userId INT UNSIGNED` FK → `users.id`). `optionalAuth`, `resolveCartOwner` (`HttpOnly` `guestCart` cookie, `Path=/cart`, 30 days), `Cart.getOrCreate(owner)` with duplicate-key retry, `cookie-parser`. The user ran the SQL on the dev DB.
-  - **Uncommitted (C1a):** `Cart.attachGuestCart` + `attachGuestCartService`. On the first `/cart` request with a token and the guest cookie, the guest cart goes to the user if they have no cart yet, and the cookie is cleared. If the user already has a cart, both are left alone. Also updated: README, AUTH-PLAN (step 5 ticked), CHANGELOG, LEARNING (2026-10-14 entry), and the Postman collection (Cart descriptions + new "Get cart (logged in)" request).
+  - `2c73c8c` (C1a): `Cart.attachGuestCart` + `attachGuestCartService`. On the first `/cart` request with a token and the guest cookie, the guest cart goes to the user if they have no cart yet, and the cookie is cleared. If the user already has a cart, both are left alone. Also updated: README, AUTH-PLAN (step 5 ticked), CHANGELOG, LEARNING (2026-10-14 entry), and the Postman collection (Cart descriptions + new "Get cart (logged in)" request).
   - HTTP-verified by hand: separate guest carts, user cart, 401 on a bad token, one cart after parallel first requests, attach after login, existing user cart left alone. Test users and carts were deleted afterwards; `carts` is empty.
 - **Postman cloud synced** 2026-10-14 via the REST API `PUT` (full replace; read back: item ids and descriptions match). Before the PUT, the cloud copy matched the committed local file.
-- **`CLAUDE.md`** added (uncommitted). It imports `.cursor/rules/*.mdc`, so Claude Code follows the same rules.
+- **`CLAUDE.md`** added. It imports `.cursor/rules/*.mdc`, so Claude Code follows the same rules.
 
 ## In progress
 
-- Waiting for the user to review the uncommitted C1a changes, `CLAUDE.md`, and this file.
+- Nothing in progress.
 
 ## Decisions
 
@@ -58,7 +60,4 @@ Implement auth for the shop API in stages (`docs/AUTH-PLAN.md`). Stages 1–2 ar
 
 ## Next
 
-1. After the user's review: commit C1a + docs + Postman + `CLAUDE.md` on `fix/per-owner-cart`.
-2. Merge into `main` and push (with confirmation).
-3. Create the annotated tag `chapter-auth-cart` and the GitHub Release (same style as earlier releases).
-4. Then the quick wins from `CODE_REVIEW.md`: H1, M1, M12, L3, L4.
+1. Next chapter: input validation (H3). Don't start until the user asks.

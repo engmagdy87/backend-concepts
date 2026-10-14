@@ -34,9 +34,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `GET /admin/products` and get-by-id return `isPublished` as `true`/`false` (MySQL stores `TINYINT` 0/1)
 - `POST /cart/items` awaits the product lookup (add-to-cart was treating the Promise as a missing product)
 - `POST /admin/delete-product` returns `404` when no MySQL row matches
+- Bad JSON body returns **400** and a too-large body **413** (was always **500**); real server errors still return a generic **500**
+- SQL query logs (which include emails and password hashes) only print when `NODE_ENV=development`; otherwise only errors are logged
 - Every visitor shared one cart (`find({ take: 1 })`): carts are now looked up by owner with `Cart.getOrCreate(owner)`; concurrent first requests for the same owner create one row (duplicate-key → re-read)
 
 ### Changed
+- `yarn start` sets `NODE_ENV=development`
+- The server refuses to start if `JWT_SECRET` is shorter than 32 characters
+- `X-Powered-By: Express` header is no longer sent
 - `/admin` is locked: `app.use("/admin", requireAuth, requireAdmin, adminRoutes)` — **401** missing/bad token, **403** not admin
 - JWT payload includes `role` (`{ userId, email, role }`); `verifyToken` returns `null` if `role` is missing or not in `USER_ROLES`
 - `POST /auth/login` returns `{ data: { accessToken } }` (JWT with `userId`, `email`, and `role`, 15 minutes by default) instead of the user
@@ -54,6 +59,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Renamed admin update API from `edit-product` / `editProduct` to `update-product` / `updateProduct`
 
 ### Removed
+- Stale `package-lock.json` (the project uses Yarn; `yarn.lock` is the only lockfile)
 - Leftover `data/cart.json` (cart is MySQL `carts` + `cart_items`)
 
 ## [0.1.0] - 2026-08-24

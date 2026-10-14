@@ -20,11 +20,11 @@ cp .env.example .env   # fill in DB_* and JWT_SECRET
 yarn start
 ```
 
-The server listens on [http://localhost:3040](http://localhost:3040). It refuses to start if `JWT_SECRET` or `JWT_EXPIRES_IN` is missing or invalid.
+The server listens on [http://localhost:3040](http://localhost:3040). It refuses to start if `JWT_SECRET` is missing or shorter than 32 characters, or `JWT_EXPIRES_IN` is missing or invalid.
 
 | Script | What it does |
 | --- | --- |
-| `yarn start` | Run `app.ts` with `tsx` and reload on `.ts` / `.json` changes |
+| `yarn start` | Run `app.ts` with `tsx` and reload on `.ts` / `.json` changes. Sets `NODE_ENV=development`, which turns on SQL query logs (without it, only errors are logged) |
 | `yarn build` | Compile TypeScript to `dist/` |
 
 Schema is manual SQL (`synchronize: false`). The first admin is created by hand:
