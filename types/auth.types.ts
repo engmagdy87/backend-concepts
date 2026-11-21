@@ -1,16 +1,11 @@
-import type { UserRole } from "./user.types";
+import type { z } from "zod";
+import type { loginSchema } from "../schemas/user.schema";
+import type { UserInput, UserRole } from "./user.types";
 
-export interface SignupBody {
-  email: string;
-  password: string;
-  firstName: string;
-  lastName: string;
-}
+/** Signup uses the same shape as a user (no `role`). */
+export type SignupBody = UserInput;
 
-export interface LoginBody {
-  email: string;
-  password: string;
-}
+export type LoginBody = z.infer<typeof loginSchema>;
 
 export interface TokenPayload {
   userId: number;

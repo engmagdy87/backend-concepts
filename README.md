@@ -37,6 +37,26 @@ UPDATE users SET role = 'admin' WHERE email = 'you@example.com';
 
 JSON request bodies are accepted. Unknown routes return `404` with `{ "message": "API not found" }`.
 
+### Validation
+
+Every request body is checked against a [zod](https://zod.dev) schema (`schemas/`) before the controller runs (`validateBody` in `middlewares/validate.middleware.ts`). Auth runs first, so a request without a valid token gets `401` before its body is looked at.
+
+- Bad body → **400** with every problem at once:
+  ```json
+  { "message": "Invalid body", "errors": { "price": ["Invalid input: expected number, received string"] } }
+  ```
+- Good body → passed on cleaned: strings trimmed where the schema says so, unknown fields dropped (so a client can't send `id` or `role` where they don't belong).
+- Numbers must be JSON numbers (`19.99`, `6`), not strings (`"19.99"`).
+- Rules that need the database stay in the services: unknown or unpublished product → **404**, email already taken → **409**, wrong login → **401**.
+
+| Body | Rules |
+| --- | --- |
+| Product (add, update) | `title` 1–255 chars (trimmed), `price` number ≥ 0, `description` non-empty (trimmed), `imageUrl` a URL ≤ 255 chars, `isPublished` boolean |
+| User (signup, admin add/update) | `email` valid, ≤ 255 chars; `password` 8–72 chars; `firstName` / `lastName` 1–100 chars (trimmed) |
+| Admin add-user | Same as user, plus optional `role`: `customer` (default) or `admin` |
+| Login | `email` and `password` present (no password rules, so older accounts can still log in) |
+| Cart add / remove | `productId` a positive whole number |
+
 ### Auth
 
 | Method | Path | Description |
@@ -45,7 +65,7 @@ JSON request bodies are accepted. Unknown routes return `404` with `{ "message":
 | `POST` | `/auth/login` | Returns `{ data: { accessToken } }` (`401` "Invalid email or password") |
 | `GET` | `/auth/me` | The caller's own user (needs `Authorization: Bearer <token>`) |
 
-Signup body (`role` is ignored here — signup is always `customer`):
+Signup body (`role` is dropped if sent — signup is always `customer`):
 
 ```json
 {
@@ -110,7 +130,7 @@ User create body (`role` is optional: `customer` by default, or `admin`; anythin
 }
 ```
 
-User update takes `email`, `password`, `firstName`, and `lastName` (all required); the `id` is in the URL.
+User update takes `email`, `password`, `firstName`, and `lastName` (all required); the `id` is in the URL. A `role` in the body is dropped (update never changes the role).
 
 ### Shop
 
@@ -150,12 +170,13 @@ routes/admin.route.ts       # Admin product + user routes
 routes/shop.route.ts        # Shop product routes
 routes/cart.route.ts        # Cart routes
 routes/auth.route.ts        # Signup, login, me
-middlewares/                # requireAuth (Bearer JWT → req.user), requireAdmin
+middlewares/                # requireAuth (Bearer JWT → req.user), requireAdmin, validateBody (schema → 400)
+schemas/                    # zod schemas: what a valid request body looks like
 controllers/                # HTTP handlers (status codes + JSON)
 services/                   # Use-case glue (cart ↔ product, user create/update, login)
 models/                     # Product / Cart / CartItem / User domain + persistence
 types/                      # Shared input / record types (+ req.user in express.d.ts)
-utils/                      # DataSource, number, password, token, validation helpers
+utils/                      # DataSource, number, password, token helpers
 docs/                       # Learning notes, plans, Postman guide (not API runtime)
 CHANGELOG.md / HANDOFF.md   # Stay at repo root (changelog + session handoff)
 ```
@@ -187,4 +208,4 @@ flowchart LR
   CartSvc --> CartItemModel["cart-item.model.ts"]
 ```
 
-A request hits `app.ts`, which parses the body and mounts `/admin`, `/shop`, `/cart`, or `/auth`. `/admin` first runs `requireAuth` (verify the Bearer JWT, set `req.user`) and `requireAdmin` (role must be `admin`). Product admin/shop handlers use the product controller and MySQL-backed model. User and auth handlers go through services that hash passwords, keep emails unique, and sign tokens. `/cart` runs `requireAuth` only: the cart belongs to `req.user.userId`. Cart handlers go through a service that checks published products and updates that user's cart in MySQL.
+A request hits `app.ts`, which parses the body and mounts `/admin`, `/shop`, `/cart`, or `/auth`. `/admin` first runs `requireAuth` (verify the Bearer JWT, set `req.user`) and `requireAdmin` (role must be `admin`). Product admin/shop handlers use the product controller and MySQL-backed model. User and auth handlers go through services that hash passwords, keep emails unique, and sign tokens. `/cart` runs `requireAuth` only: the cart belongs to `req.user.userId`. Cart handlers go through a service that checks published products and updates that user's cart in MySQL. Routes that take a body run `validateBody(schema)` before the controller, so a bad body gets a 400 and never reaches it.

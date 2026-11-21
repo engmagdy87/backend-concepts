@@ -8,6 +8,17 @@ Project copy: `docs/BACKEND-REFERENCE.md`. Canonical long-term copy also lives a
 
 ## Inbox
 
+### 2026-11-22 — Validation: check the shape at the door, rules in the service
+
+- Flow: `bodyParser` (text → object; bad JSON → 400) → auth guards (401/403) → `validateBody(schema)` (400 + every bad field) → controller → service/model. Auth first: don't describe the body to strangers.
+- Two kinds of checks. **Shape** (is `price` a number, is `email` an email, is `productId` a positive integer) needs no DB → schema, **400**. **Business rule** (does product 6 exist and is it published, is this email taken) needs MySQL → service, **404 / 409**. The same field can be stopped by either layer, depending on how it's wrong.
+- A schema also **cleans**: trims, fills defaults, and drops unknown fields (stops mass assignment: `role` / `id` sent by a client). `req.body` is replaced by the parsed copy.
+- One source of truth: `type ProductInput = z.infer<typeof productSchema>`. A TS interface alone is compile-time only.
+- Login is looser than signup on purpose: only "both present". Old accounts may not meet new password rules, and a login form shouldn't teach the policy. The DB answers (401).
+- Options: hand-written `if`s → model `validate()` → **schema library (zod, the TS + Express default; our pick)** → decorators (`class-validator`, NestJS) → OpenAPI-driven (big teams, later).
+- "Sanitize" means two things. Normalizing (trim, lowercase, defaults, drop fields) = zod. Making text safe = where it's **used**: parameterized queries for SQL (TypeORM does it), escaping on output for HTML (XSS). Validate input, escape output.
+- bcrypt reads only 72 bytes → cap passwords at 72 (chars is close enough for now; bytes is the exact rule).
+
 ### 2026-09-23 — Boolean `0`/`1` vs `true`/`false` is not every DB
 
 - Wire shape depends on **database + driver**, not a universal SQL rule. Do not assume every store needs a loop that turns `0`/`1` into booleans.
@@ -524,9 +535,11 @@ PATCH /admin/products/1
 
 TypeScript `ProductInput` is **compile-time**. `req.body` is still untrusted at runtime. Same for entity fields: `isPublished!: boolean` is gone after compile; TypeORM `@Column()` only sees it if `tsc` emitted decorator metadata. `tsx` does not, so `@Column({ type: "boolean" })` is the runtime type.
 
-Validate on the **model** (`Product.validateInput`), return **400** from the **controller** when invalid.
+Validate the **shape** at the door: a zod schema per body in `schemas/`, run by `validateBody(schema)` on the route, **400** listing every bad field. Rules that need the database stay in the **service** (404 / 409). Types come from the schema (`z.infer`).
 
-Rules practiced: non-empty trimmed strings for `title` / `description` / `imageUrl`; `price` number ≥ 0; `isPublished` boolean.
+Earlier version (replaced 2026-11-22): validate on the model (`Product.validateInput`), 400 from the controller. It worked for one model but mixed HTTP rules into the domain and got copied per controller.
+
+Rules practiced: trimmed non-empty `title` / `description`, `imageUrl` a URL, `price` number ≥ 0, `isPublished` boolean; email format, password 8–72, role enum with a default; `productId` positive integer.
 
 ### IDs
 
@@ -622,7 +635,7 @@ Ideas not implemented, or “next when ready”:
 
 ## Quick enhance checklist (learning order)
 
-1. Validate create body → 400
+1. ~~Validate create body → 400~~ done (zod schemas + `validateBody`, `chapter-validation`)
 2. ~~Safer ids (`max(id) + 1`)~~ done (needed once delete exists)
 3. Keep docs (README diagram) matching layers
 4. ~~Update / delete endpoints~~ done (verb-style POSTs; REST verbs still optional)
@@ -645,12 +658,13 @@ This project only: when an endpoint is added, changed, or removed, update `postm
 ```
 app.ts                       # mounts routers; /admin = requireAuth + requireAdmin, /cart = requireAuth
 routes/        admin, shop, cart, auth
-middlewares/   auth.middleware.ts (requireAuth, requireAdmin)
+middlewares/   auth.middleware.ts (requireAuth, requireAdmin), validate.middleware.ts (validateBody)
+schemas/       product, user, cart (zod: what a valid body looks like)
 controllers/   products, users, cart, auth
 services/      user, auth, cart
 models/        product, user, cart, cart-item (TypeORM entities + static methods)
 types/         product, user, cart, auth, express.d.ts (req.user)
-utils/         database, number, password, token, validation
+utils/         database, number, password, token
 ```
 
 Shop: `Product.fetchPublished` / `fetchPublishedById`  

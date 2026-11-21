@@ -10,7 +10,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `users` table (TypeORM `User`, unique `email`) with admin CRUD: `POST /admin/add-user`, `PUT /admin/update-user/:id`, `DELETE /admin/delete-user/:id`, `GET /admin/users`, `GET /admin/users/:id`
 - `POST /auth/signup` (`201`; `409` when the email exists) and `POST /auth/login` (`401` "Invalid email or password")
 - Passwords hashed with bcrypt (`utils/password.utils.ts`); user responses never include `password`
-- Required-field check (`utils/validation.utils.ts`): add/update user, signup, and login return `400` listing missing fields
+- Request body validation with [zod](https://zod.dev): schemas in `schemas/` (product, user, cart) and `validateBody` middleware. A bad body returns **400** `{ message: "Invalid body", errors: { field: [...] } }` listing every problem; a good body reaches the controller trimmed and with unknown fields dropped
+- Signup and admin add/update user: `email` must be a valid email, `password` 8–72 characters, names 1–100 characters
 - Cart API under `/cart` with service layer (published-product check; add/remove one unit)
 - `PUT /admin/products/:id` to replace an existing product (id in the URL)
 - `DELETE /admin/delete-product/:id` to delete a product (id in the URL)
@@ -24,6 +25,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `carts.userId` (`UNIQUE`, FK → `users.id` `ON DELETE CASCADE`); one cart per logged-in user. SQL in `docs/AUTH-PLAN.md`
 
 ### Fixed
+- `POST /cart/items` with a non-number `productId` (e.g. `"abc"`) returned **404**; it now returns **400**
+- Add/update product with a missing or wrong-typed field returned **500** or saved bad data; it now returns **400**
+- A non-string `password` (e.g. `123`) on signup crashed bcrypt (**500**); it now returns **400**
 - `DELETE /cart/items` returns `400` when `productId` is not a positive integer (controller compared `null` to the service’s `undefined`)
 - TypeORM start under `tsx`: `@Column({ type })` so column types are not guessed (`Product#title` crash)
 - `GET /admin/products` and get-by-id return `isPublished` as `true`/`false` (MySQL stores `TINYINT` 0/1)
@@ -34,6 +38,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Every visitor shared one cart (`find({ take: 1 })`): carts are looked up by `userId` with `Cart.getOrCreate(userId)`; concurrent first requests for the same user create one row (duplicate-key → re-read)
 
 ### Changed
+- Types for request bodies (`ProductInput`, `UserInput`, `AddUserBody`, `LoginBody`, cart bodies) come from the zod schemas (`z.infer`), so the type and the runtime check can't drift apart
+- `productId` in cart bodies must be a JSON number; numeric strings like `"6"` now return **400**
+- A `role` sent to signup or update-user is dropped silently instead of being ignored by the controller
 - `/cart` requires a logged-in user (`requireAuth`). Missing, malformed, invalid, or expired token → **401**. Sign up or log in first. The cart is that user's row (`carts.userId`)
 - `yarn start` sets `NODE_ENV=development`
 - The server refuses to start if `JWT_SECRET` is shorter than 32 characters
@@ -55,6 +62,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Renamed admin update API from `edit-product` / `editProduct` to `update-product` / `updateProduct`
 
 ### Removed
+- `findMissingFields` (`utils/validation.utils.ts`) and the hand-written `isUserRole` check in add-user, replaced by the schemas
 - Guest cart (shipped in `chapter-auth-cart`): the `guestCart` cookie, `carts.guestToken`, `optionalAuth`, `resolveCartOwner`, and attaching a guest cart after login
 - `cookie-parser` (nothing reads cookies anymore)
 - Stale `package-lock.json` (the project uses Yarn; `yarn.lock` is the only lockfile)

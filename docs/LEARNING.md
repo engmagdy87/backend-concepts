@@ -4,6 +4,16 @@ Notes on backend concepts practiced in this repo. Newest entries first.
 
 Update this file when a feature teaches a concept worth keeping. Skip chores, formatting-only changes, and WIP commits.
 
+## 2026-11-22 — Input validation with zod
+
+- A TypeScript interface is a promise at compile time only. At runtime `req.body` is whatever the client sent, which is why `"price": "abc"` reached MySQL. A zod schema runs on every request, and `z.infer` turns it into the type, so the check and the type come from one place.
+- One middleware, `validateBody(schema)`, sits on the route like `requireAuth`. It's about 10 lines: `safeParse`, then either **400** with every bad field at once, or `req.body = result.data` and `next()`. The controller can then trust the body completely.
+- Order: auth guards first (401/403), then the body check. Don't describe your expected body to someone who isn't logged in.
+- Shape vs business rule. "Is `productId` a positive integer?" needs no database → schema, 400. "Does product 99999 exist and is it published?" needs MySQL → service, 404. Before this chapter, `"abc"` got a 404 because the service mixed both questions.
+- A schema cleans as it checks: trims strings, fills defaults (`role` → `customer`), and drops unknown fields. That blocks mass assignment: `role` sent to signup, or `id` sent to add-product, simply disappears.
+- Login gets a looser schema than signup on purpose: older accounts may not meet new password rules, and a login form shouldn't teach the policy. Every wrong login is the same 401.
+- Validate input, escape output. zod normalizes (trim, defaults); SQL injection is stopped by parameterized queries (TypeORM), and XSS by escaping where the text is shown.
+
 ## 2026-11-21 — Cart is for logged-in users only
 
 - One identity is enough. The guest cookie was a second way to answer "whose cart?". Now there is one answer: the `userId` inside the JWT.

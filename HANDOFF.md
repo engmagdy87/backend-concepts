@@ -2,10 +2,11 @@
 
 ## Goal
 
-Auth stages 1–3 are done, tagged, and released (`chapter-auth-users`, `chapter-auth-jwt`, `chapter-auth-cart`). The cart is login-only (`f7bf556` on `main`, pushed 2026-11-22; cleanup SQL run). Next: input validation (H3).
+Auth stages 1–3 are done, tagged, and released (`chapter-auth-users`, `chapter-auth-jwt`, `chapter-auth-cart`). The cart is login-only (`f7bf556` on `main`). Input validation (H3) is built on branch `feat/validation` (2026-11-22): committed on the branch, not merged or pushed yet. Next: the user's OK to sync Postman cloud, merge to `main`, push, and tag `chapter-validation`.
 
 ## Done
 
+- **Input validation (2026-11-22, branch `feat/validation`):** `zod@4.6.7`. `schemas/product.schema.ts` (`productSchema`), `schemas/user.schema.ts` (`userSchema`, `addUserSchema` with `role` enum default `customer`, looser `loginSchema`), `schemas/cart.schema.ts` (`cartItemSchema`, positive int). `middlewares/validate.middleware.ts` → `validateBody(schema)`: 400 `{ message: "Invalid body", errors: fieldErrors }`, else `req.body = result.data`. Wired on add/update product, signup, login, add/update user, cart add/remove. Body types come from `z.infer`. Removed `utils/validation.utils.ts` (`findMissingFields`), `USER_REQUIRED_FIELDS`, the add-user `isUserRole` check, and `parseId` in the cart service. Built in 3 steps, each `tsc` + HTTP-tested (test users/products/carts deleted after). Docs: README (Validation section), CHANGELOG, LEARNING, BACKEND-REFERENCE (both copies: inbox + "Types vs runtime validation" concept), CODE_REVIEW (H3 done, L6 mostly), MENTOR-BRIEFING. Postman local: descriptions updated; Signup / Add user / Update user examples use `test1234` (8+ rule), Login keeps `test123` (the user's existing accounts use it); 3 "→ 400" example requests. A slide deck "How Validation Flows" was made for the user (claude.ai artifact).
 - **Cart is login-only (`f7bf556`, pushed to `main` 2026-11-22):** `app.use("/cart", requireAuth, cartRoutes)`. No token or a bad token → 401. Removed: `middlewares/cart-owner.middleware.ts`, `optionalAuth`, `Cart.attachGuestCart` / `attachGuestCartService`, `CartOwner` + `req.cartOwner`, `carts.guestToken` in the entity, and `cookie-parser` (+ types). `Cart.getOrCreate(userId)` is the only lookup; services take `userId` from `req.user`. `tsc` passes. HTTP-tested: 401 without/with bad token, no `Set-Cookie`, add/get/remove/clear, 400 bad id, 404 missing product, 3 parallel first requests → one cart. Test users/carts deleted; `carts` is empty. Docs updated: README, CHANGELOG, AUTH-PLAN, LEARNING, MENTOR-BRIEFING, BACKEND-REFERENCE (snapshot), CODE_REVIEW, Cursor Postman rule. Postman local file: Cart folder uses Bearer `{{token}}`, "Get cart (logged in)" removed. The `chapter-auth-cart` release notes got a one-line note that the guest cart was later removed (tag not moved). Postman cloud synced 2026-11-22 via the REST API `PUT` (before: cloud matched the committed file; after: read back, matches local).
   - The user discarded an earlier version of this change on 2026-11-20 and asked Claude Code to redo it.
 - **Quick wins (2026-10-14, on `main`):** H1, M1, M12, L3, L4 from `CODE_REVIEW.md`, hand-tested. `yarn start` now sets `NODE_ENV=development` (query logs on); without it, only errors are logged. No chapter tag (small fixes inside the current era).
@@ -21,10 +22,11 @@ Auth stages 1–3 are done, tagged, and released (`chapter-auth-users`, `chapter
 
 ## In progress
 
-- Nothing in progress. Schema after cleanup: `carts` = `id`, `userId` NOT NULL UNIQUE, FK → `users`.
+- `feat/validation` waits for: Postman cloud sync (user's OK), merge to `main` + push (user's OK), `chapter-validation` tag + release. `main` also has the unpushed HANDOFF commit `8056674`.
 
 ## Decisions
 
+- **Validation:** shape checks in zod schemas on the route (400); DB rules stay in services (404/409). Login schema is loose on purpose. `productId` must be a JSON number (`"6"` → 400). URL `:id` still uses `parseId` (a `validateParams` is a later idea).
 - **No guest cart.** `/cart` is for a logged-in user only. A visitor signs up or logs in, then adds items. There is nothing to merge.
 - **H5 (parallel add/remove lost updates) is parked as "Later".** An atomic-SQL + row-lock fix was written, then undone at the user's request as too advanced for now. The simple `increment`/`decrement` version is noted in `CODE_REVIEW.md`.
 - **Earlier decisions (still valid):**
@@ -53,10 +55,10 @@ Auth stages 1–3 are done, tagged, and released (`chapter-auth-users`, `chapter
   ```
 - **Leftovers from the review:**
   - Signup reveals existing emails via 409 (accepted).
-  - `findMissingFields` checks presence only (H3).
   - Unused `ProductIdInput` / `UserIdInput`.
 - **`docs/BACKEND-REFERENCE.md`:** "This repo (snapshot)" updated 2026-11-21 at the user's request. The copy in `~/.cursor/skills/backend-learning-reference/` was not touched.
 
 ## Next
 
-1. Next chapter: input validation (H3), in steps: products → users/auth → cart.
+1. With the user's OK: sync Postman cloud, merge `feat/validation` into `main`, push, tag + release `chapter-validation`.
+2. Next chapter candidates: automated tests (M7), DB schema file (M8), API path cleanup (M11), duplicate-email race (M2).

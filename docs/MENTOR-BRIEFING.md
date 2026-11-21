@@ -1,6 +1,6 @@
 # Mentor briefing — what was finished
 
-TypeScript Express learning API. Persistence path: JSON → mysql2 → **TypeORM on MySQL**. Latest chapters: auth in three stages (`chapter-auth-users` → `chapter-auth-jwt` → `chapter-auth-cart`).
+TypeScript Express learning API. Persistence path: JSON → mysql2 → **TypeORM on MySQL**. Latest chapters: auth in three stages (`chapter-auth-users` → `chapter-auth-jwt` → `chapter-auth-cart`), then input validation (`chapter-validation`).
 
 | | |
 | --- | --- |
@@ -10,6 +10,7 @@ TypeScript Express learning API. Persistence path: JSON → mysql2 → **TypeORM
 | Cart mode | One cart per logged-in user (`userId`). No token → 401 |
 | Admin | `/admin` needs an admin token (401 no/bad token, 403 not admin) |
 | Add / remove | ±1 quantity on the line |
+| Validation | zod schema per body (`schemas/`), `validateBody` → 400 listing every bad field |
 
 ## ERD (current)
 
@@ -55,6 +56,7 @@ TypeScript Express learning API. Persistence path: JSON → mysql2 → **TypeORM
 | HTTP | `POST`/`DELETE /cart/items`, clear, get — qty on the line |
 | GET polish | One find: `relations: { items: { product: true } }` → `cart.items` |
 | Safety | SQL logs only in development, 400 for bad JSON, strong `JWT_SECRET` check |
+| Validation | Shape at the door (400); DB rules in services (404 / 409); unknown fields dropped |
 
 ## Concepts covered
 
@@ -62,12 +64,13 @@ TypeScript Express learning API. Persistence path: JSON → mysql2 → **TypeORM
 - "Whose cart?" comes from the token (`req.user.userId`), never from a `cartId` in the body.
 - The database `UNIQUE` rule is the real guarantee; the `if` in code is not enough.
 - 401 = who are you? 403 = I know you, but no.
+- Validate input (shape → 400 at the door), escape output. Business rules that need the DB stay in services.
 
 ## Possible next
 
-- Input validation (H3 in `CODE_REVIEW.md`).
-- Later: tests, schema file, Prisma / `chapter-prisma`.
+- Automated tests (M7): "bad body → 400" is an easy first test.
+- Then the database schema file (M8) and API path cleanup (M11). Later: Prisma / `chapter-prisma`.
 
 ---
 
-Source: `HANDOFF.md` · auth chapters (TypeORM era)
+Source: `HANDOFF.md` · auth + validation chapters (TypeORM era)

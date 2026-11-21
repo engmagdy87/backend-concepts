@@ -1,21 +1,11 @@
-export interface UserInput {
-  email: string;
-  password: string;
-  firstName: string;
-  lastName: string;
-}
+import type { z } from "zod";
+import type { addUserSchema, userSchema } from "../schemas/user.schema";
 
-/** Admin add-user only. `role` is untrusted until `isUserRole` checks it. */
-export interface AddUserBody extends UserInput {
-  role?: unknown;
-}
+/** A user body after validation (signup, add-user, update-user). */
+export type UserInput = z.infer<typeof userSchema>;
 
-export const USER_REQUIRED_FIELDS: (keyof UserInput)[] = [
-  "email",
-  "password",
-  "firstName",
-  "lastName",
-];
+/** Admin add-user body after validation: `role` is checked and defaulted. */
+export type AddUserBody = z.infer<typeof addUserSchema>;
 
 export interface UserOutput extends Omit<UserInput, "password"> {
   id: number;

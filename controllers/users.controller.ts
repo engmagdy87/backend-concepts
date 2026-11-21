@@ -1,37 +1,16 @@
 import { Request, Response } from "express";
 import User from "../models/user.model";
-import {
-  isUserRole,
-  USER_REQUIRED_FIELDS,
-  USER_ROLES,
-  type AddUserBody,
-  type UserInput,
-} from "../types/user.types";
+import type { AddUserBody, UserInput } from "../types/user.types";
 import { parseId } from "../utils/number.utils";
 import { createUserService, updateUserService } from "../services/user.service";
-import { findMissingFields } from "../utils/validation.utils";
 
 export const addUser = async (
   req: Request<unknown, unknown, AddUserBody>,
   res: Response,
 ) => {
-  const missing = findMissingFields<UserInput>(req.body, USER_REQUIRED_FIELDS);
-
-  if (missing.length) {
-    return res
-      .status(400)
-      .json({ message: `Missing fields: ${missing.join(", ")}` });
-  }
-
-  const role = req.body.role ?? "customer";
-
-  if (!isUserRole(role)) {
-    return res
-      .status(400)
-      .json({ message: `role must be one of: ${USER_ROLES.join(", ")}` });
-  }
-
-  const user = await createUserService(req.body, role);
+  // validateBody(addUserSchema) already checked every field and defaulted `role`.
+  const { role, ...userData } = req.body;
+  const user = await createUserService(userData, role);
 
   if (!user) {
     return res.status(409).json({ message: "Email already exists" });
@@ -53,14 +32,6 @@ export const updateUser = async (
     return res.status(400).json({
       message: "id must be a positive integer",
     });
-  }
-
-  const missing = findMissingFields<UserInput>(req.body, USER_REQUIRED_FIELDS);
-
-  if (missing.length) {
-    return res
-      .status(400)
-      .json({ message: `Missing fields: ${missing.join(", ")}` });
   }
 
   const result = await updateUserService(parsedId, req.body);
