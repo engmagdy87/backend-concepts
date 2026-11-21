@@ -2,11 +2,11 @@
 
 ## Goal
 
-Auth stages 1–3 are done, tagged, and released (`chapter-auth-users`, `chapter-auth-jwt`, `chapter-auth-cart`). The cart is now login-only (2026-11-21, not committed). Cleanup SQL run 2026-11-22. Next: commit when asked, then input validation (H3) when asked.
+Auth stages 1–3 are done, tagged, and released (`chapter-auth-users`, `chapter-auth-jwt`, `chapter-auth-cart`). The cart is login-only (`f7bf556` on `main`, pushed 2026-11-22; cleanup SQL run). Next: input validation (H3).
 
 ## Done
 
-- **Cart is login-only (2026-11-21, uncommitted):** `app.use("/cart", requireAuth, cartRoutes)`. No token or a bad token → 401. Removed: `middlewares/cart-owner.middleware.ts`, `optionalAuth`, `Cart.attachGuestCart` / `attachGuestCartService`, `CartOwner` + `req.cartOwner`, `carts.guestToken` in the entity, and `cookie-parser` (+ types). `Cart.getOrCreate(userId)` is the only lookup; services take `userId` from `req.user`. `tsc` passes. HTTP-tested: 401 without/with bad token, no `Set-Cookie`, add/get/remove/clear, 400 bad id, 404 missing product, 3 parallel first requests → one cart. Test users/carts deleted; `carts` is empty. Docs updated: README, CHANGELOG, AUTH-PLAN, LEARNING, MENTOR-BRIEFING, BACKEND-REFERENCE (snapshot), CODE_REVIEW, Cursor Postman rule. Postman local file: Cart folder uses Bearer `{{token}}`, "Get cart (logged in)" removed. Postman cloud synced 2026-11-22 via the REST API `PUT` (before: cloud matched the committed file; after: read back, matches local).
+- **Cart is login-only (`f7bf556`, pushed to `main` 2026-11-22):** `app.use("/cart", requireAuth, cartRoutes)`. No token or a bad token → 401. Removed: `middlewares/cart-owner.middleware.ts`, `optionalAuth`, `Cart.attachGuestCart` / `attachGuestCartService`, `CartOwner` + `req.cartOwner`, `carts.guestToken` in the entity, and `cookie-parser` (+ types). `Cart.getOrCreate(userId)` is the only lookup; services take `userId` from `req.user`. `tsc` passes. HTTP-tested: 401 without/with bad token, no `Set-Cookie`, add/get/remove/clear, 400 bad id, 404 missing product, 3 parallel first requests → one cart. Test users/carts deleted; `carts` is empty. Docs updated: README, CHANGELOG, AUTH-PLAN, LEARNING, MENTOR-BRIEFING, BACKEND-REFERENCE (snapshot), CODE_REVIEW, Cursor Postman rule. Postman local file: Cart folder uses Bearer `{{token}}`, "Get cart (logged in)" removed. The `chapter-auth-cart` release notes got a one-line note that the guest cart was later removed (tag not moved). Postman cloud synced 2026-11-22 via the REST API `PUT` (before: cloud matched the committed file; after: read back, matches local).
   - The user discarded an earlier version of this change on 2026-11-20 and asked Claude Code to redo it.
 - **Quick wins (2026-10-14, on `main`):** H1, M1, M12, L3, L4 from `CODE_REVIEW.md`, hand-tested. `yarn start` now sets `NODE_ENV=development` (query logs on); without it, only errors are logged. No chapter tag (small fixes inside the current era).
 - **Stage 3 released:** `fix/per-owner-cart` fast-forwarded into `main` and pushed (`2c73c8c`); annotated tag + GitHub Release `chapter-auth-cart` (2026-10-14).
@@ -21,7 +21,7 @@ Auth stages 1–3 are done, tagged, and released (`chapter-auth-users`, `chapter
 
 ## In progress
 
-- Login-only cart: done in the working tree, not committed. Cleanup SQL run 2026-11-22 (`carts` = `id`, `userId` NOT NULL UNIQUE, FK → `users`). Postman cloud is synced.
+- Nothing in progress. Schema after cleanup: `carts` = `id`, `userId` NOT NULL UNIQUE, FK → `users`.
 
 ## Decisions
 
@@ -59,5 +59,4 @@ Auth stages 1–3 are done, tagged, and released (`chapter-auth-users`, `chapter
 
 ## Next
 
-1. Commit when asked.
-2. Next chapter: input validation (H3). Don't start until the user asks.
+1. Next chapter: input validation (H3), in steps: products → users/auth → cart.
