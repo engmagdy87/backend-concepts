@@ -19,7 +19,8 @@ app.use(bodyParser.urlencoded({ extended: false }));
 
 app.use("/admin", requireAuth, requireAdmin, adminRoutes);
 app.use("/shop", shopRoutes);
-app.use("/cart", cartRoutes);
+// Cart is for logged-in users only. No token or a bad one → 401 (sign up / log in).
+app.use("/cart", requireAuth, cartRoutes);
 app.use("/auth", authRoutes);
 
 app.use((_req, res) => {

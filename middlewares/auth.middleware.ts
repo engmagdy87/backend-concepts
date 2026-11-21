@@ -31,17 +31,6 @@ export const requireAuth = (
   }
 };
 
-/** No Authorization header → continue as guest. A header that's present must be valid. */
-export const optionalAuth = (
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) => {
-  if (!req.headers.authorization || authenticate(req, res)) {
-    next();
-  }
-};
-
 export const requireAdmin = (
   req: Request,
   res: Response,

@@ -4,6 +4,13 @@ Notes on backend concepts practiced in this repo. Newest entries first.
 
 Update this file when a feature teaches a concept worth keeping. Skip chores, formatting-only changes, and WIP commits.
 
+## 2026-11-21 — Cart is for logged-in users only
+
+- One identity is enough. The guest cookie was a second way to answer "whose cart?". Now there is one answer: the `userId` inside the JWT.
+- Lock the router once: `app.use("/cart", requireAuth, cartRoutes)`. A missing or bad token is **401** before any cart code runs. That is the "sign up or log in" gate. A customer token is enough; admin is a separate lock on `/admin`.
+- The server still picks the cart. The client sends `productId`, never `cartId`. `Cart.getOrCreate(userId)` finds or creates that user's row. `UNIQUE (userId)` is what stops two carts for one person.
+- Removing a feature is also work: delete its middleware, its types, its package (`cookie-parser`), and its database column. Leftover code that nothing calls only confuses the next reader.
+
 ## 2026-10-14 — Small safety habits
 
 - Logs are data too. SQL query logs print the values, so every login wrote an email and a password hash to the terminal. Turn them on only in development (`NODE_ENV=development`, set by `yarn start`).

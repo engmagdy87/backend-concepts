@@ -1,14 +1,14 @@
 # Auth plan
 
-Basic auth + guest cart for this shop API. Implement in order. Skip nice-to-haves until the core flow works.
+Basic auth and a per-user cart for this shop API. Implement in order. Skip nice-to-haves until the core flow works.
 
 ## Suggested way (this repo)
 
 | Piece | Choice |
 | --- | --- |
-| Guest | Cart cookie (opaque id → server finds/creates cart). No Redis yet. |
-| Logged-in | JWT access token in `Authorization` (easy with Postman). |
-| Next | Cart chapter done (per-user / per-guest-cookie cart, guest cart attached after login). Merge rules are in “Nice to have”. |
+| Guest | No cart. Sign up or log in first. |
+| Logged-in | JWT access token in `Authorization` (easy with Postman). `/cart` requires it. |
+| Next | Cart is login-only (one row per `userId`). Guest cookie was built, then removed. |
 | Skip for v1 | Refresh tokens, Redis sessions, OAuth, email verify. |
 
 ---
@@ -19,7 +19,7 @@ Basic auth + guest cart for this shop API. Implement in order. Skip nice-to-have
 | --- | --- | --- | --- |
 | Users + signup/login | `chapter-auth-users` | 1, 2 (without JWT) | Done |
 | JWT + `GET /me` + roles + lock `/admin` | `chapter-auth-jwt` | 2 (JWT), 3, 6 | Done (tag on the finishing commit) |
-| Guest cart cookie + cart per user | `chapter-auth-cart` | 4, 5 | Later |
+| Cart per logged-in user | `chapter-auth-cart` | 4, 5 | Done (guest cookie removed afterwards; `/cart` requires a token) |
 
 ---
 
@@ -42,21 +42,19 @@ Basic auth + guest cart for this shop API. Implement in order. Skip nice-to-have
 
 - [x] Middleware: read `Authorization: Bearer <token>` → verify → put `req.user` (`middlewares/auth.middleware.ts` → `requireAuth`; `req.user` typed in `types/express.d.ts`)
 - [x] `GET /auth/me` — returns current user (proves auth works); `401` bad/missing token, `404` user deleted since the token was issued
-- [x] Public stays public: shop products, guest cart (no middleware on those routers)
+- [x] Public stays public: shop products (no auth middleware on that router). `/cart` is not public.
 
-### 4. Guest cart cookie (before / without signup)
+### 4. Cart for the logged-in user — done
 
-- [x] On first cart touch: `Set-Cookie: guestCart=<32 random bytes, base64url>` (`HttpOnly`, `SameSite=Lax`, `Path=/cart`, 30 days, `Secure` in production) — `middlewares/cart-owner.middleware.ts`
-- [x] `Cart.getOrCreate(owner)` finds the cart for this cookie (`carts.guestToken`), not “one shared row”. `UNIQUE` keys turn the get-or-create race into a caught duplicate-key error + re-read
+- [x] `app.use("/cart", requireAuth, cartRoutes)`. No token, or a bad one → **401**. Sign up or log in first. A customer token is enough.
+- [x] `Cart.getOrCreate(userId)` finds the cart for `req.user.userId`, not “the first row”. `UNIQUE (userId)` turns a double-create race into a caught duplicate-key error + re-read
 - [x] Client still sends only `productId` on add/remove — never `cartId` in the body
 
-### 5. Tie cart to user (after login works)
+### 5. Guest cart — removed
 
-- [x] Add nullable `carts.userId`
-- [x] After login: guest cart from the cookie → attached to the user if they have no cart yet (`Cart.attachGuestCart`). Happens on the first `/cart` request with a token, because the cookie is `Path=/cart` and never reaches `/auth/login`. Cookie is cleared after attach. If the user already has a cart, both are left alone (merge rules are in “Nice to have”)
-- [x] Logged-in `/cart` (Bearer token, via `optionalAuth`) resolves by `userId`; guest still by cookie. A Bearer header that is present but invalid → **401** (no silent fallback to the guest cart)
+A guest cookie (`guestCart` / `carts.guestToken`) and “attach after login” were built (released in `chapter-auth-cart`), then removed. The cart belongs only to a logged-in user. There is nothing to merge.
 
-SQL run for steps 4–5 (MySQL):
+SQL already run when the guest column was added (kept so the cleanup below makes sense):
 
 ```sql
 ALTER TABLE carts
@@ -69,6 +67,19 @@ ALTER TABLE carts
 -- The old shared guest row (both NULL) can never be matched again
 DELETE FROM cart_items WHERE cartId IN (SELECT id FROM carts WHERE guestToken IS NULL AND userId IS NULL);
 DELETE FROM carts WHERE guestToken IS NULL AND userId IS NULL;
+```
+
+- [x] Cleanup SQL (removes guest carts and the guest column). Run 2026-11-22: the tables were empty, so only the `ALTER` was needed. MySQL Workbench's safe update mode (error 1175) blocks the `DELETE`s; use `SET SQL_SAFE_UPDATES = 0;` for that run if there is data:
+
+```sql
+-- Guest carts have no userId. Remove their lines first, then the carts.
+DELETE FROM cart_items
+WHERE cartId IN (SELECT id FROM (SELECT id FROM carts WHERE userId IS NULL) AS guest_carts);
+DELETE FROM carts WHERE userId IS NULL;
+
+ALTER TABLE carts
+  DROP COLUMN guestToken, -- its UNIQUE index goes with it
+  MODIFY userId INT UNSIGNED NOT NULL; -- every cart now has an owner
 ```
 
 ### 6. Protect what needs it — done
@@ -105,7 +116,7 @@ Why roles are here and not "later": signup is public, so "any logged-in user" me
 | **Refresh token / server session** | Short access JWT + revoke / “logout all devices” |
 | **Session cookie instead of JWT** | Better browser-shop default once you care about cookies + logout |
 | **Password reset / email verify** | Real product; extra tables + mail |
-| **Guest → user cart merge rules** | Same product lines, quantities — do after basic attach works |
+| **Guest cart** | Removed. A cart exists only after signup or login |
 | **Redis for sessions** | Multi-server / serious revoke — overkill while one process |
 | **OAuth (Google, etc.)** | After email/password is solid |
 | **CSRF** | When login (or cart) proof is a cookie the browser auto-sends — e.g. session cookie, or a real browser FE. Less urgent while auth is Bearer JWT in Postman. Use `SameSite` on cookies first; add a CSRF token/library when cookie auth is live. |
@@ -115,6 +126,6 @@ Why roles are here and not "later": signup is public, so "any logged-in user" me
 
 ## One-line summary
 
-**Must ship:** users → signup/login + JWT → `GET /me` → roles + lock `/admin` → guest cart cookie → then `carts.userId` + merge.
+**Must ship:** users → signup/login + JWT → `GET /me` → roles + lock `/admin` → cart per logged-in user (`requireAuth` on `/cart`).
 
 **Nice later:** logout/revoke, refresh or full sessions, reset/verify, OAuth, CSRF (cookie auth), XSS (frontend + readable tokens).

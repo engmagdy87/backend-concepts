@@ -2,10 +2,12 @@
 
 ## Goal
 
-Auth stages 1–3 are done, tagged, and released (`chapter-auth-users`, `chapter-auth-jwt`, `chapter-auth-cart`). Next: quick wins from `CODE_REVIEW.md`, then input validation.
+Auth stages 1–3 are done, tagged, and released (`chapter-auth-users`, `chapter-auth-jwt`, `chapter-auth-cart`). The cart is now login-only (2026-11-21, not committed). Cleanup SQL run 2026-11-22. Next: commit when asked, then input validation (H3) when asked.
 
 ## Done
 
+- **Cart is login-only (2026-11-21, uncommitted):** `app.use("/cart", requireAuth, cartRoutes)`. No token or a bad token → 401. Removed: `middlewares/cart-owner.middleware.ts`, `optionalAuth`, `Cart.attachGuestCart` / `attachGuestCartService`, `CartOwner` + `req.cartOwner`, `carts.guestToken` in the entity, and `cookie-parser` (+ types). `Cart.getOrCreate(userId)` is the only lookup; services take `userId` from `req.user`. `tsc` passes. HTTP-tested: 401 without/with bad token, no `Set-Cookie`, add/get/remove/clear, 400 bad id, 404 missing product, 3 parallel first requests → one cart. Test users/carts deleted; `carts` is empty. Docs updated: README, CHANGELOG, AUTH-PLAN, LEARNING, MENTOR-BRIEFING, BACKEND-REFERENCE (snapshot), CODE_REVIEW, Cursor Postman rule. Postman local file: Cart folder uses Bearer `{{token}}`, "Get cart (logged in)" removed. Postman cloud synced 2026-11-22 via the REST API `PUT` (before: cloud matched the committed file; after: read back, matches local).
+  - The user discarded an earlier version of this change on 2026-11-20 and asked Claude Code to redo it.
 - **Quick wins (2026-10-14, on `main`):** H1, M1, M12, L3, L4 from `CODE_REVIEW.md`, hand-tested. `yarn start` now sets `NODE_ENV=development` (query logs on); without it, only errors are logged. No chapter tag (small fixes inside the current era).
 - **Stage 3 released:** `fix/per-owner-cart` fast-forwarded into `main` and pushed (`2c73c8c`); annotated tag + GitHub Release `chapter-auth-cart` (2026-10-14).
 - **Stage 2 released:** `main` pushed (`0d6a67c`), and GitHub Release `chapter-auth-jwt` published on `0d6a67c` (2026-10-14).
@@ -19,13 +21,11 @@ Auth stages 1–3 are done, tagged, and released (`chapter-auth-users`, `chapter
 
 ## In progress
 
-- Nothing in progress.
+- Login-only cart: done in the working tree, not committed. Cleanup SQL run 2026-11-22 (`carts` = `id`, `userId` NOT NULL UNIQUE, FK → `users`). Postman cloud is synced.
 
 ## Decisions
 
-- **Attach happens on `/cart`, not in `/auth/login`:** the cookie has `Path=/cart`, so `/auth/login` never sees it.
-- **Basic attach only.** Combining two carts (summing quantities) stays in AUTH-PLAN's "Nice to have".
-- **`optionalAuth`:** no header → guest; a header that's present but bad → 401 (no silent fallback to the guest cart).
+- **No guest cart.** `/cart` is for a logged-in user only. A visitor signs up or logs in, then adds items. There is nothing to merge.
 - **H5 (parallel add/remove lost updates) is parked as "Later".** An atomic-SQL + row-lock fix was written, then undone at the user's request as too advanced for now. The simple `increment`/`decrement` version is noted in `CODE_REVIEW.md`.
 - **Earlier decisions (still valid):**
   - The role comes from the JWT.
@@ -52,12 +52,12 @@ Auth stages 1–3 are done, tagged, and released (`chapter-auth-users`, `chapter
   git push --force origin refs/tags/chapter-auth-jwt
   ```
 - **Leftovers from the review:**
-  - C1b: empty guest carts pile up.
   - Signup reveals existing emails via 409 (accepted).
   - `findMissingFields` checks presence only (H3).
   - Unused `ProductIdInput` / `UserIdInput`.
-- **`docs/BACKEND-REFERENCE.md`:** the "This repo (snapshot)" section is out of date. Only update it when the user asks for the mentor/notebook.
+- **`docs/BACKEND-REFERENCE.md`:** "This repo (snapshot)" updated 2026-11-21 at the user's request. The copy in `~/.cursor/skills/backend-learning-reference/` was not touched.
 
 ## Next
 
-1. Next chapter: input validation (H3). Don't start until the user asks.
+1. Commit when asked.
+2. Next chapter: input validation (H3). Don't start until the user asks.

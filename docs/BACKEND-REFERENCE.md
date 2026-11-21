@@ -599,14 +599,14 @@ Ideas not implemented, or “next when ready”:
 - [ ] **Postgres** — same HTTP; swap engine (`pg` + DataSource `type: "postgres"`, or as the DB under Prisma). Not a new chapter tag by itself unless you treat it as its own era
 - [ ] **Migrations** — versioned schema files you run on purpose (TypeORM migrate CLI, or Prisma `migrate`). Same job as hand `CREATE`/`ALTER`; adopt when you switch DB, wipe/rebuild often, or enter Prisma. Keep `synchronize: false`
 - [ ] **Prisma era** (`chapter-prisma`): when TypeORM CRUD + one relation feels enough — keep routes; swap `models/` + DataSource only
-- [ ] Auth / `carts.userId` (pass 2) when you want users, not before. Until then, a guest cookie is how two browsers get two carts; login stays `Set-Cookie` (`HttpOnly`) for the browser and `Authorization: Bearer` for mobile/CLI
+- [x] Auth / `carts.userId` (pass 2): done in the `chapter-auth-*` stages. JWT in `Authorization: Bearer`; `/cart` is login-only (a guest cookie was tried, then removed)
 - [ ] Nest (or similar) only when the Express layers feel boring — not the next step after cart
 
 ### Smaller / REST polish
 
 - [x] `PUT /admin/products/:id` (full body; id in the URL)
 - [ ] `PATCH /admin/products/:id` if you later want partial updates
-- [ ] `DELETE /admin/products/:id` (still `POST /admin/delete-product`)
+- [x] Delete with the id in the URL: `DELETE /admin/delete-product/:id` (path name kept RPC-style)
 - [ ] Shared 404/400 response helpers (optional; DRY JSON shape)
 - [ ] Async file I/O (`fs.promises`)
 - [ ] Service layer only when a use case spans multiple models/steps
@@ -640,23 +640,20 @@ Ideas not implemented, or “next when ready”:
 
 Useful only as an example of the rules above — not a second source of truth.
 
-This project only: when an endpoint is added, changed, or removed, update `postman/backend-concepts.postman_collection.json` and sync it to Postman over MCP (see `.cursor/rules/postman-collection.mdc`).
+This project only: when an endpoint is added, changed, or removed, update `postman/backend-concepts.postman_collection.json` and sync it to Postman cloud (Cursor: MCP; Claude Code: REST API — see `.cursor/rules/postman-collection.mdc`).
 
 ```
-app.ts
-routes/admin.route.ts
-routes/shop.route.ts
-routes/cart.route.ts
-controllers/products.controller.ts
-controllers/cart.controller.ts
-services/cart.service.ts
-models/product.model.ts
-models/cart.model.ts
-models/cart-item.model.ts
-types/product.types.ts
-utils/database.utils.ts
+app.ts                       # mounts routers; /admin = requireAuth + requireAdmin, /cart = requireAuth
+routes/        admin, shop, cart, auth
+middlewares/   auth.middleware.ts (requireAuth, requireAdmin)
+controllers/   products, users, cart, auth
+services/      user, auth, cart
+models/        product, user, cart, cart-item (TypeORM entities + static methods)
+types/         product, user, cart, auth, express.d.ts (req.user)
+utils/         database, number, password, token, validation
 ```
 
 Shop: `Product.fetchPublished` / `fetchPublishedById`  
-Admin: `addProduct`, `updateProduct`, `deleteProduct`, `fetchProducts`, `fetchProductById`  
-Model: `save`, `update`, `delete`, plus fetch helpers
+Admin: products (`addProduct`, `updateProduct`, `deleteProduct`, `fetchProducts`, `fetchProductById`) and users (same shape)  
+Auth: `signup`, `login` (JWT), `me`  
+Cart: `/cart` for the logged-in user only; `Cart.getOrCreate(req.user.userId)`; client sends `productId`, never `cartId`

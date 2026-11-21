@@ -9,6 +9,7 @@ When you **add, change, or remove an HTTP endpoint**, update both copies in the 
 
 1. **Local first** — edit `postman/backend-concepts.postman_collection.json` (folders, method, path, body, `baseUrl`).
 2. **Then Postman cloud** — sync that same collection through the working Postman MCP (`user-postman-api-mcp`). Prefer replacing the cloud collection with the local file (`putCollection`) so they match.
+   Claude Code has no Postman MCP: it uses the Postman REST API instead (`PUT https://api.getpostman.com/collections/<uid>`, see `CLAUDE.md`), and asks before using the key.
 
 Cloud collection UID: `35152687-d8a8ccff-2ddb-4ad1-950a-5278c57b5cc8`  
 Workspace: `backend-concepts` (`cab9cbc2-cfad-498f-ad8b-637d9fe456e5`)

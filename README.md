@@ -1,14 +1,14 @@
 # backend-concepts
 
-Express and TypeScript backend learning project. Products, users, and the cart live in MySQL (admin = full catalog, shop = published only). Each guest (cookie) or logged-in user has their own cart (`carts`) plus items (`cart_items`). Users sign up and log in for a JWT; `/admin` needs an admin token.
+Express and TypeScript backend learning project. Products, users, and the cart live in MySQL (admin = full catalog, shop = published only). Each logged-in user has their own cart (`carts`) plus items (`cart_items`). Users sign up and log in for a JWT; `/cart` needs that token, and `/admin` needs an admin token.
 
 - [Changelog](CHANGELOG.md) — shipped API and product changes
 - [Learning log](docs/LEARNING.md) — backend concepts practiced here
 - [Backend reference](docs/BACKEND-REFERENCE.md) — durable mentor notes (naming, layers, drafts) for later projects
-- [Auth plan](docs/AUTH-PLAN.md) — signup/login, JWT, roles (done); guest cart cookie and cart per user (done)
-- [Postman collection](postman/backend-concepts.postman_collection.json) — import into Postman (`baseUrl` = `http://localhost:3040`). When the API changes, update this file and sync it to Postman (MCP).
+- [Auth plan](docs/AUTH-PLAN.md) — signup/login, JWT, roles (done); cart for logged-in users only (done)
+- [Postman collection](postman/backend-concepts.postman_collection.json) — import into Postman (`baseUrl` = `http://localhost:3040`). When the API changes, update this file and sync it to Postman cloud (Cursor: Postman MCP; Claude Code: Postman REST API).
 - [Postman notes](docs/POSTMAN.md) — body types, environments, Share value vs Invite, Scripts → After response
-- [Mentor briefing](docs/MENTOR-BRIEFING.md) — cart chapter snapshot
+- [Mentor briefing](docs/MENTOR-BRIEFING.md) — snapshot after the auth chapters
 
 ## Setup
 
@@ -123,12 +123,9 @@ Shop routes return only products with `isPublished: true`.
 
 ### Cart
 
-Cart only accepts **published** products. `POST /cart/items` adds **one** unit; repeating the same `productId` increments the stored line quantity. `DELETE /cart/items` decrements by one and drops the line at 0.
+Every `/cart` route needs a logged-in user: `Authorization: Bearer <token>`. No token, or a bad one, → **401**. Sign up or log in first. A customer token is enough (admin is not required).
 
-Whose cart:
-- **Guest** (no `Authorization` header): the first `/cart` request sets an `HttpOnly` cookie `guestCart` (`Path=/cart`, 30 days). Postman and browsers send it back automatically.
-- **Logged in** (`Authorization: Bearer <token>`): the user's own cart. An invalid token → **401**.
-- **After login:** the first `/cart` request with a token and the guest cookie moves the guest cart to the user if they have no cart yet, then clears the cookie.
+Cart only accepts **published** products. `POST /cart/items` adds **one** unit; repeating the same `productId` increments the stored line quantity. `DELETE /cart/items` decrements by one and drops the line at 0. The cart is the caller's own row (`carts.userId` from the token); the client never sends a `cartId`.
 
 | Method | Path | Description |
 | --- | --- | --- |
@@ -148,7 +145,7 @@ Add / remove body:
 ## Layout
 
 ```
-app.ts                      # Express app, middleware, /admin lock, 404 + 500 handlers
+app.ts                      # Express app, middleware, /admin and /cart locks, 404 + 500 handlers
 routes/admin.route.ts       # Admin product + user routes
 routes/shop.route.ts        # Shop product routes
 routes/cart.route.ts        # Cart routes
@@ -169,7 +166,8 @@ flowchart LR
   App --> Guard["requireAuth + requireAdmin"]
   Guard --> Admin["routes/admin.route.ts"]
   App --> Shop["routes/shop.route.ts"]
-  App --> CartRt["routes/cart.route.ts"]
+  App --> CartGuard["requireAuth"]
+  CartGuard --> CartRt["routes/cart.route.ts"]
   App --> AuthRt["routes/auth.route.ts"]
   App --> NotFound["404 JSON"]
   Admin --> ProdCtrl["products.controller.ts"]
@@ -189,4 +187,4 @@ flowchart LR
   CartSvc --> CartItemModel["cart-item.model.ts"]
 ```
 
-A request hits `app.ts`, which parses the body and mounts `/admin`, `/shop`, `/cart`, or `/auth`. `/admin` first runs `requireAuth` (verify the Bearer JWT, set `req.user`) and `requireAdmin` (role must be `admin`). Product admin/shop handlers use the product controller and MySQL-backed model. User and auth handlers go through services that hash passwords, keep emails unique, and sign tokens. Cart routes first run `optionalAuth` and `resolveCartOwner` (user from the token, or guest from the `guestCart` cookie), then a service that checks published products and updates that owner's cart in MySQL.
+A request hits `app.ts`, which parses the body and mounts `/admin`, `/shop`, `/cart`, or `/auth`. `/admin` first runs `requireAuth` (verify the Bearer JWT, set `req.user`) and `requireAdmin` (role must be `admin`). Product admin/shop handlers use the product controller and MySQL-backed model. User and auth handlers go through services that hash passwords, keep emails unique, and sign tokens. `/cart` runs `requireAuth` only: the cart belongs to `req.user.userId`. Cart handlers go through a service that checks published products and updates that user's cart in MySQL.
