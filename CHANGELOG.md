@@ -25,6 +25,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `carts.userId` (`UNIQUE`, FK → `users.id` `ON DELETE CASCADE`); one cart per logged-in user. SQL in `docs/AUTH-PLAN.md`
 
 ### Fixed
+- Two signups (or admin add-user) with the same email at the same moment returned **500** for the second one; MySQL's duplicate-email error now returns **409** "Email already exists". Same for update-user changing to an email someone just took (409 "Email already in use")
 - `POST /cart/items` with a non-number `productId` (e.g. `"abc"`) returned **404**; it now returns **400**
 - Add/update product with a missing or wrong-typed field returned **500** or saved bad data; it now returns **400**
 - A non-string `password` (e.g. `123`) on signup crashed bcrypt (**500**); it now returns **400**

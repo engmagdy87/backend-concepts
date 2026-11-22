@@ -1,18 +1,9 @@
 import { Entity, PrimaryGeneratedColumn, Column, OneToMany, Unique } from "typeorm";
-import { AppDataSource } from "../utils/database.utils";
+import { AppDataSource, isDuplicateKeyError } from "../utils/database.utils";
 import CartItem from "./cart-item.model";
 
 function cartRepository() {
   return AppDataSource.getRepository(Cart);
-}
-
-function isDuplicateKeyError(err: unknown): boolean {
-  return (
-    typeof err === "object" &&
-    err !== null &&
-    "code" in err &&
-    err.code === "ER_DUP_ENTRY"
-  );
 }
 
 @Entity({ name: "carts" })

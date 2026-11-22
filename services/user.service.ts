@@ -6,6 +6,7 @@ import type {
   UserRole,
 } from "../types/user.types";
 import { hashPassword } from "../utils/password.utils";
+import { isDuplicateKeyError } from "../utils/database.utils";
 
 export const createUserService = async (
   userData: UserInput,
@@ -18,7 +19,15 @@ export const createUserService = async (
   }
   const passwordHash = await hashPassword(userData.password);
   const user = new User({ ...userData, password: passwordHash }, role);
-  return user.save();
+
+  try {
+    return await user.save();
+  } catch (err) {
+    // Two signups with the same email at the same moment: both passed the
+    // check above, MySQL's UNIQUE(email) stopped the second. Email taken → 409.
+    if (isDuplicateKeyError(err)) return null;
+    throw err; // anything else really broke → 500
+  }
 };
 
 /**
@@ -42,10 +51,17 @@ export const updateUserService = async (
 
   const passwordHash = await hashPassword(userData.password);
 
-  const updatedUser = await User.update(userId, {
-    ...userData,
-    password: passwordHash,
-  });
+  let updatedUser;
+  try {
+    updatedUser = await User.update(userId, {
+      ...userData,
+      password: passwordHash,
+    });
+  } catch (err) {
+    // Someone else took this email between our check and the save → 409.
+    if (isDuplicateKeyError(err)) return { status: "email_in_use" };
+    throw err;
+  }
 
   if (!updatedUser) return { status: "not_found" };
 

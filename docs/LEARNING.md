@@ -4,6 +4,13 @@ Notes on backend concepts practiced in this repo. Newest entries first.
 
 Update this file when a feature teaches a concept worth keeping. Skip chores, formatting-only changes, and WIP commits.
 
+## 2026-11-22 — Error handling: user mistake or real breakage?
+
+- The main question for any error: did the **user** do something wrong (4xx), or did something really **break** (500)? Our layers already split this: schema → 400, auth → 401/403, services → 404/409, and the error handler in `app.ts` turns anything unexpected into a generic 500.
+- Express 5 catches errors from `async` routes and sends them to that error handler. Express 4 (older courses) needs `try/catch` + `next(err)` in every route.
+- A database error isn't always a technical failure. Two signups with the same email at the same moment both pass the "is it taken?" check, then MySQL's `UNIQUE (email)` rejects the second one (`ER_DUP_ENTRY`). That means "email taken" → **409**, not 500. Catch that one error code, and re-throw everything else.
+- Reproduce a bug before fixing it: 5 parallel signups gave `201 500 500 500 500` before, `201 409 409 409 409` after.
+
 ## 2026-11-22 — Input validation with zod
 
 - A TypeScript interface is a promise at compile time only. At runtime `req.body` is whatever the client sent, which is why `"price": "abc"` reached MySQL. A zod schema runs on every request, and `z.infer` turns it into the type, so the check and the type come from one place.
