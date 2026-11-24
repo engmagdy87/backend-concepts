@@ -1,11 +1,12 @@
 # backend-concepts
 
-Express and TypeScript backend learning project. Products, users, and the cart live in MySQL (admin = full catalog, shop = published only). Each logged-in user has their own cart (`carts`) plus items (`cart_items`). Users sign up and log in for a JWT; `/cart` needs that token, and `/admin` needs an admin token.
+Express and TypeScript backend learning project. Products, users, and the cart live in MySQL (admin = full catalog, shop = published only). Each logged-in user has their own cart (`carts`) plus items (`cart_items`). Users sign up and log in for a JWT; `/cart` needs that token, and `/admin` needs an admin token. Admins can upload a product image (saved on local disk, served at `/images/...`), and a logged-in user can download their cart as a PDF quote.
 
 - [Changelog](CHANGELOG.md) — shipped API and product changes
 - [Learning log](docs/LEARNING.md) — backend concepts practiced here
 - [Backend reference](docs/BACKEND-REFERENCE.md) — durable mentor notes (naming, layers, drafts) for later projects
 - [Auth plan](docs/AUTH-PLAN.md) — signup/login, JWT, roles (done); cart for logged-in users only (done)
+- [Files plan](docs/FILES-PLAN.md) — product image upload and cart quote PDF (done)
 - [Postman collection](postman/backend-concepts.postman_collection.json) — import into Postman (`baseUrl` = `http://localhost:3040`). When the API changes, update this file and sync it to Postman cloud (Cursor: Postman MCP; Claude Code: Postman REST API).
 - [Postman notes](docs/POSTMAN.md) — body types, environments, Share value vs Invite, Scripts → After response
 - [Mentor briefing](docs/MENTOR-BRIEFING.md) — snapshot after the auth chapters
@@ -32,6 +33,14 @@ Schema is manual SQL (`synchronize: false`). The first admin is created by hand:
 ```sql
 UPDATE users SET role = 'admin' WHERE email = 'you@example.com';
 ```
+
+Since the files chapter, a product can have no image (`imageUrl` is `NULL` until one is uploaded). On a database created before that, run once:
+
+```sql
+ALTER TABLE products MODIFY imageUrl VARCHAR(255) NULL;
+```
+
+Uploaded images are saved in `uploads/products/` (created automatically, git-ignored).
 
 ## API
 
@@ -195,12 +204,19 @@ flowchart LR
   CartGuard --> CartRt["routes/cart.route.ts"]
   App --> AuthRt["routes/auth.route.ts"]
   App --> NotFound["404 JSON"]
+  App --> Images["/images\nexpress.static"]
+  Images --> UploadsDir["uploads/products/"]
+  Admin --> Upload["upload.middleware.ts\nmulter"]
+  Upload --> UploadsDir
+  Upload --> ProdCtrl
   Admin --> ProdCtrl["products.controller.ts"]
   Admin --> UsersCtrl["users.controller.ts"]
   Shop --> ProdCtrl
   CartRt --> CartCtrl["cart.controller.ts"]
   AuthRt --> AuthCtrl["auth.controller.ts"]
   ProdCtrl --> ProdModel["product.model.ts"]
+  ProdCtrl --> Storage["storage.service.ts"]
+  Storage --> UploadsDir
   UsersCtrl --> UserSvc["user.service.ts"]
   AuthCtrl --> AuthSvc["auth.service.ts"]
   AuthSvc --> UserSvc
@@ -210,6 +226,7 @@ flowchart LR
   CartSvc --> ProdModel
   CartSvc --> CartModel["cart.model.ts"]
   CartSvc --> CartItemModel["cart-item.model.ts"]
+  CartCtrl --> Pdf["pdf.service.ts\nPDFKit"]
 ```
 
-A request hits `app.ts`, which parses the body and mounts `/admin`, `/shop`, `/cart`, or `/auth`. `/admin` first runs `requireAuth` (verify the Bearer JWT, set `req.user`) and `requireAdmin` (role must be `admin`). Product admin/shop handlers use the product controller and MySQL-backed model. User and auth handlers go through services that hash passwords, keep emails unique, and sign tokens. `/cart` runs `requireAuth` only: the cart belongs to `req.user.userId`. Cart handlers go through a service that checks published products and updates that user's cart in MySQL. Routes that take a body run `validateBody(schema)` before the controller, so a bad body gets a 400 and never reaches it.
+A request hits `app.ts`, which parses the body and mounts `/admin`, `/shop`, `/cart`, or `/auth`. `/admin` first runs `requireAuth` (verify the Bearer JWT, set `req.user`) and `requireAdmin` (role must be `admin`). Product admin/shop handlers use the product controller and MySQL-backed model. User and auth handlers go through services that hash passwords, keep emails unique, and sign tokens. `/cart` runs `requireAuth` only: the cart belongs to `req.user.userId`. Cart handlers go through a service that checks published products and updates that user's cart in MySQL. Routes that take a body run `validateBody(schema)` before the controller, so a bad body gets a 400 and never reaches it. An image upload runs multer first (it saves the file in `uploads/products/`), then the controller stores `/images/<file>` on the product; `storage.service.ts` deletes old files. `/images` serves those files with `express.static`. `GET /cart/quote` streams the user's cart as a PDF from `pdf.service.ts`, without saving it.
