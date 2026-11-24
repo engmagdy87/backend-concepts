@@ -2,10 +2,11 @@
 
 ## Goal
 
-Auth stages 1–3 are done, tagged, and released (`chapter-auth-users`, `chapter-auth-jwt`, `chapter-auth-cart`). The cart is login-only (`f7bf556` on `main`). Input validation (H3) is released as `chapter-validation` (`7476e5e`, 2026-11-22). Next chapter: automated tests (M7).
+Auth stages 1–3 are done, tagged, and released (`chapter-auth-users`, `chapter-auth-jwt`, `chapter-auth-cart`). The cart is login-only (`f7bf556` on `main`). Input validation (H3) is released as `chapter-validation` (`7476e5e`, 2026-11-22). Files (image upload + cart quote PDF) is released as `chapter-files` (`2b68799`, 2026-11-25). Next chapter: automated tests (M7).
 
 ## Done
 
+- **Files chapter (released `chapter-files`, `2b68799`, 2026-11-25):** see `docs/FILES-PLAN.md`. Upload `POST /admin/products/:id/image` (multer, `uploads/products/`, `/images` static, old/deleted files removed), `imageUrl` nullable (user ran the SQL), `GET /cart/quote` streams a PDFKit PDF. All cases tested by the user in Postman. Later: R2/S3 storage, `sharp`, `file-type`, orders + invoice.
 - **Duplicate-email race (M2, 2026-11-22, merged to `main`):** `isDuplicateKeyError` moved from `models/cart.model.ts` to `utils/database.utils.ts`; `createUserService` and `updateUserService` catch `ER_DUP_ENTRY` → 409 (anything else re-thrown → 500). Reproduced before the fix (5 parallel signups: 201 + 4×500), after: 201 + 4×409; cart parallel-create still makes one cart. Test users deleted. Docs: CHANGELOG, LEARNING (error-handling entry, mapped to the user's course module), CODE_REVIEW. No chapter tag (a fix inside the current era).
 - **Input validation (released `chapter-validation`, `7476e5e`, 2026-11-22):** `zod@4.6.7`. `schemas/product.schema.ts` (`productSchema`), `schemas/user.schema.ts` (`userSchema`, `addUserSchema` with `role` enum default `customer`, looser `loginSchema`), `schemas/cart.schema.ts` (`cartItemSchema`, positive int). `middlewares/validate.middleware.ts` → `validateBody(schema)`: 400 `{ message: "Invalid body", errors: fieldErrors }`, else `req.body = result.data`. Wired on add/update product, signup, login, add/update user, cart add/remove. Body types come from `z.infer`. Removed `utils/validation.utils.ts` (`findMissingFields`), `USER_REQUIRED_FIELDS`, the add-user `isUserRole` check, and `parseId` in the cart service. Built in 3 steps, each `tsc` + HTTP-tested (test users/products/carts deleted after). Docs: README (Validation section), CHANGELOG, LEARNING, BACKEND-REFERENCE (both copies: inbox + "Types vs runtime validation" concept), CODE_REVIEW (H3 done, L6 mostly), MENTOR-BRIEFING. Postman local: descriptions updated; Signup / Add user / Update user examples use `test1234` (8+ rule), Login keeps `test123` (the user's existing accounts use it); 3 "→ 400" example requests. A slide deck "How Validation Flows" was made for the user (claude.ai artifact).
 - **Cart is login-only (`f7bf556`, pushed to `main` 2026-11-22):** `app.use("/cart", requireAuth, cartRoutes)`. No token or a bad token → 401. Removed: `middlewares/cart-owner.middleware.ts`, `optionalAuth`, `Cart.attachGuestCart` / `attachGuestCartService`, `CartOwner` + `req.cartOwner`, `carts.guestToken` in the entity, and `cookie-parser` (+ types). `Cart.getOrCreate(userId)` is the only lookup; services take `userId` from `req.user`. `tsc` passes. HTTP-tested: 401 without/with bad token, no `Set-Cookie`, add/get/remove/clear, 400 bad id, 404 missing product, 3 parallel first requests → one cart. Test users/carts deleted; `carts` is empty. Docs updated: README, CHANGELOG, AUTH-PLAN, LEARNING, MENTOR-BRIEFING, BACKEND-REFERENCE (snapshot), CODE_REVIEW, Cursor Postman rule. Postman local file: Cart folder uses Bearer `{{token}}`, "Get cart (logged in)" removed. The `chapter-auth-cart` release notes got a one-line note that the guest cart was later removed (tag not moved). Postman cloud synced 2026-11-22 via the REST API `PUT` (before: cloud matched the committed file; after: read back, matches local).
@@ -23,7 +24,7 @@ Auth stages 1–3 are done, tagged, and released (`chapter-auth-users`, `chapter
 
 ## In progress
 
-- **Files chapter on branch `feat/files` (uncommitted).** `docs/FILES-PLAN.md` steps 1–5 done: multer upload `POST /admin/products/:id/image`, `/images` static, old/deleted files removed. The user ran `ALTER TABLE products MODIFY imageUrl VARCHAR(255) NULL;` (2026-11-24) and tested every case in Postman (2026-11-25). Postman: "Upload product image" added, Add/Update product no longer send `imageUrl`; cloud synced 2026-11-25. Step 6 built 2026-11-25: `GET /cart/quote` (`services/pdf.service.ts` streams PDFKit into `res`; empty cart → 400), `tsc` OK, sample PDF checked offline; Postman "Download cart quote" added + cloud synced. The user tested step 6 in Postman (all pass, 2026-11-25). README, CHANGELOG, LEARNING written. Postman local: "Download response" wording fix not yet synced to cloud. **Next: commit, merge to `main` + push, `chapter-files` release — each only with the user's OK.**
+- Nothing in progress. Files chapter released 2026-11-25: `2b68799` on `main` (pushed, `feat/files` deleted), annotated tag + GitHub Release `chapter-files`, Postman cloud synced (cloud matched local except the expected wording fix).
 
 ## Decisions
 
@@ -62,8 +63,6 @@ Auth stages 1–3 are done, tagged, and released (`chapter-auth-users`, `chapter
 ## Next
 
 Agreed order (one roadmap; `CODE_REVIEW.md` holds the quality items, `docs/BACKEND-REFERENCE.md` → Drafts the feature items):
-
-0. **Files chapter (added 2026-11-23)** — `docs/FILES-PLAN.md`: product image upload (multer v2, local disk) + cart quote PDF download (PDFKit, streamed). Mirrors the user's course section 20. Cloud storage (R2) is "later". Start after the user finishes the module's lectures.
 
 1. **Automated tests (M7)** — first, so every later change is checked automatically. A "bad body → 400" test is the easy start.
 2. **Database schema file (M8)** — all the manual SQL in one file in the repo.
