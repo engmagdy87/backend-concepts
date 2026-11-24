@@ -7,6 +7,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- `POST /admin/products/:id/image`: upload a product image (multer, form-data field `image`; JPEG/PNG/WebP, max 2 MB). Saved in `uploads/products/` with a random name; `imageUrl` becomes `/images/<file>`. **400** no file / wrong type, **413** too big, **404** unknown product
+- `GET /images/<file>` serves uploaded images (`express.static`)
+- `GET /cart/quote`: the logged-in user's cart as a PDF download (PDFKit, streamed, not saved). **400** "Cart is empty"
 - `users` table (TypeORM `User`, unique `email`) with admin CRUD: `POST /admin/add-user`, `PUT /admin/update-user/:id`, `DELETE /admin/delete-user/:id`, `GET /admin/users`, `GET /admin/users/:id`
 - `POST /auth/signup` (`201`; `409` when the email exists) and `POST /auth/login` (`401` "Invalid email or password")
 - Passwords hashed with bcrypt (`utils/password.utils.ts`); user responses never include `password`
@@ -39,6 +42,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Every visitor shared one cart (`find({ take: 1 })`): carts are looked up by `userId` with `Cart.getOrCreate(userId)`; concurrent first requests for the same user create one row (duplicate-key → re-read)
 
 ### Changed
+- `imageUrl` is no longer part of the add/update product body (a sent one is dropped); it's `null` until an image is uploaded. Manual SQL: `ALTER TABLE products MODIFY imageUrl VARCHAR(255) NULL;`
+- Uploading a new image deletes the old file, and deleting a product deletes its image file (only files we own under `/images/`, never external URLs)
 - Types for request bodies (`ProductInput`, `UserInput`, `AddUserBody`, `LoginBody`, cart bodies) come from the zod schemas (`z.infer`), so the type and the runtime check can't drift apart
 - `productId` in cart bodies must be a JSON number; numeric strings like `"6"` now return **400**
 - A `role` sent to signup or update-user is dropped silently instead of being ignored by the controller

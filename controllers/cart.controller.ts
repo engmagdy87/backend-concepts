@@ -5,6 +5,7 @@ import {
   getCartService,
   removeFromCartService,
 } from "../services/cart.service";
+import { writeCartQuotePdf } from "../services/pdf.service";
 import type { AddToCartBody, RemoveFromCartBody } from "../types/cart.types";
 
 export const getCart = async (req: Request, res: Response) => {
@@ -47,4 +48,18 @@ export const clearCart = async (req: Request, res: Response) => {
     message: "Cart cleared",
     data: cart,
   });
+};
+
+/** GET /cart/quote: downloads the user's own cart as a PDF (streamed, not saved). */
+export const getCartQuote = async (req: Request, res: Response) => {
+  const items = await getCartService(req.user!.userId);
+
+  if (items.length === 0) {
+    return res.status(400).json({ message: "Cart is empty" });
+  }
+
+  // Tell the client what is coming: a PDF, to save as "quote.pdf".
+  res.setHeader("Content-Type", "application/pdf");
+  res.setHeader("Content-Disposition", 'attachment; filename="quote.pdf"');
+  writeCartQuotePdf(items, res);
 };

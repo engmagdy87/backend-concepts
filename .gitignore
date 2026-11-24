@@ -21,3 +21,6 @@ dist
 
 # Local code review notes (not published for now)
 CODE_REVIEW.md
+
+# Uploaded files (data, not code)
+uploads/

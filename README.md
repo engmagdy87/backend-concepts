@@ -51,7 +51,7 @@ Every request body is checked against a [zod](https://zod.dev) schema (`schemas/
 
 | Body | Rules |
 | --- | --- |
-| Product (add, update) | `title` 1–255 chars (trimmed), `price` number ≥ 0, `description` non-empty (trimmed), `imageUrl` a URL ≤ 255 chars, `isPublished` boolean |
+| Product (add, update) | `title` 1–255 chars (trimmed), `price` number ≥ 0, `description` non-empty (trimmed), `isPublished` boolean. No `imageUrl`: it's set by the image upload (a sent one is dropped) |
 | User (signup, admin add/update) | `email` valid, ≤ 255 chars; `password` 8–72 chars; `firstName` / `lastName` 1–100 chars (trimmed) |
 | Admin add-user | Same as user, plus optional `role`: `customer` (default) or `admin` |
 | Login | `email` and `password` present (no password rules, so older accounts can still log in) |
@@ -95,7 +95,8 @@ Everything under `/admin` needs an **admin** token: `401` without a valid token,
 | --- | --- | --- |
 | `POST` | `/admin/add-product` | Create a product |
 | `PUT` | `/admin/products/:id` | Replace an existing product (id in the URL; full body) |
-| `DELETE` | `/admin/delete-product/:id` | Delete a product (id in the URL, no body) |
+| `POST` | `/admin/products/:id/image` | Upload or replace the product's image (multipart form-data, field `image`) |
+| `DELETE` | `/admin/delete-product/:id` | Delete a product (id in the URL, no body; also deletes its image file) |
 | `GET` | `/admin/products` | List all products |
 | `GET` | `/admin/products/:id` | Get a product by id |
 | `POST` | `/admin/add-user` | Create a user (optional `role`) |
@@ -111,12 +112,13 @@ Product create body:
   "title": "A book",
   "price": 19.99,
   "description": "A useful book",
-  "imageUrl": "https://example.com/book.png",
   "isPublished": true
 }
 ```
 
-MySQL assigns the `id` (`AUTO_INCREMENT` / `insertId`). Product update takes the same fields as create; the `id` is in the URL.
+MySQL assigns the `id` (`AUTO_INCREMENT` / `insertId`). Product update takes the same fields as create; the `id` is in the URL. A new product has `"imageUrl": null` until an image is uploaded; update never changes it.
+
+Product image upload: `POST /admin/products/:id/image`, body **form-data** with one field `image` (a file). Only JPEG, PNG, or WebP, max 2 MB. The server picks a random file name, saves it in `uploads/products/` (git-ignored), and sets `imageUrl` to `/images/<file>`. **200** with the product; **400** no file or wrong type; **413** too big; **404** product not found (the uploaded file is removed). A new upload deletes the old file. Images are public: `GET /images/<file>`.
 
 User create body (`role` is optional: `customer` by default, or `admin`; anything else → `400`):
 
@@ -153,6 +155,7 @@ Cart only accepts **published** products. `POST /cart/items` adds **one** unit; 
 | `POST` | `/cart/items` | Add one unit (`productId` only) |
 | `DELETE` | `/cart/items` | Remove one unit (`productId` in body) |
 | `DELETE` | `/cart` | Clear cart |
+| `GET` | `/cart/quote` | Download the cart as a PDF (`quote.pdf`); **400** `"Cart is empty"` |
 
 Add / remove body:
 
@@ -170,14 +173,15 @@ routes/admin.route.ts       # Admin product + user routes
 routes/shop.route.ts        # Shop product routes
 routes/cart.route.ts        # Cart routes
 routes/auth.route.ts        # Signup, login, me
-middlewares/                # requireAuth (Bearer JWT → req.user), requireAdmin, validateBody (schema → 400)
+middlewares/                # requireAuth (Bearer JWT → req.user), requireAdmin, validateBody (schema → 400), image upload (multer)
 schemas/                    # zod schemas: what a valid request body looks like
 controllers/                # HTTP handlers (status codes + JSON)
-services/                   # Use-case glue (cart ↔ product, user create/update, login)
+services/                   # Use-case glue (cart ↔ product, user create/update, login), image files on disk, quote PDF
 models/                     # Product / Cart / CartItem / User domain + persistence
 types/                      # Shared input / record types (+ req.user in express.d.ts)
 utils/                      # DataSource, number, password, token helpers
 docs/                       # Learning notes, plans, Postman guide (not API runtime)
+uploads/                    # Uploaded product images (git-ignored)
 CHANGELOG.md / HANDOFF.md   # Stay at repo root (changelog + session handoff)
 ```
 

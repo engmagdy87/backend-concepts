@@ -9,6 +9,7 @@ import shopRoutes from "./routes/shop.route";
 import cartRoutes from "./routes/cart.route";
 import authRoutes from "./routes/auth.route";
 import { requireAdmin, requireAuth } from "./middlewares/auth.middleware";
+import { PRODUCT_IMAGES_DIR } from "./services/storage.service";
 
 const app = express();
 
@@ -16,6 +17,11 @@ app.disable("x-powered-by"); // don't tell clients which framework we run
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
+
+// Public product images: GET /images/<file> sends uploads/products/<file>
+// (streamed, with Content-Type and caching headers). A missing file falls
+// through to the 404 below.
+app.use("/images", express.static(PRODUCT_IMAGES_DIR));
 
 app.use("/admin", requireAuth, requireAdmin, adminRoutes);
 app.use("/shop", shopRoutes);

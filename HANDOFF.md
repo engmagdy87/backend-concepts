@@ -23,7 +23,7 @@ Auth stages 1–3 are done, tagged, and released (`chapter-auth-users`, `chapter
 
 ## In progress
 
-- Nothing in progress. Release done: Postman cloud synced (kept the user's own Login body from the cloud: `john.doe@system.com` / `test123`), `feat/validation` fast-forwarded into `main` and pushed, branch deleted, annotated tag + GitHub Release `chapter-validation`.
+- **Files chapter on branch `feat/files` (uncommitted).** `docs/FILES-PLAN.md` steps 1–5 done: multer upload `POST /admin/products/:id/image`, `/images` static, old/deleted files removed. The user ran `ALTER TABLE products MODIFY imageUrl VARCHAR(255) NULL;` (2026-11-24) and tested every case in Postman (2026-11-25). Postman: "Upload product image" added, Add/Update product no longer send `imageUrl`; cloud synced 2026-11-25. Step 6 built 2026-11-25: `GET /cart/quote` (`services/pdf.service.ts` streams PDFKit into `res`; empty cart → 400), `tsc` OK, sample PDF checked offline; Postman "Download cart quote" added + cloud synced. The user tested step 6 in Postman (all pass, 2026-11-25). README, CHANGELOG, LEARNING written. Postman local: "Download response" wording fix not yet synced to cloud. **Next: commit, merge to `main` + push, `chapter-files` release — each only with the user's OK.**
 
 ## Decisions
 
@@ -62,6 +62,8 @@ Auth stages 1–3 are done, tagged, and released (`chapter-auth-users`, `chapter
 ## Next
 
 Agreed order (one roadmap; `CODE_REVIEW.md` holds the quality items, `docs/BACKEND-REFERENCE.md` → Drafts the feature items):
+
+0. **Files chapter (added 2026-11-23)** — `docs/FILES-PLAN.md`: product image upload (multer v2, local disk) + cart quote PDF download (PDFKit, streamed). Mirrors the user's course section 20. Cloud storage (R2) is "later". Start after the user finishes the module's lectures.
 
 1. **Automated tests (M7)** — first, so every later change is checked automatically. A "bad body → 400" test is the easy start.
 2. **Database schema file (M8)** — all the manual SQL in one file in the repo.

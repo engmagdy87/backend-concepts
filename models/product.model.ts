@@ -22,8 +22,9 @@ class Product {
   @Column({ type: "text" })
   description!: string;
 
-  @Column({ type: "varchar", length: 255 })
-  imageUrl!: string;
+  // null until an image is uploaded. Only the upload endpoint sets it.
+  @Column({ type: "varchar", length: 255, nullable: true })
+  imageUrl!: string | null;
 
   @Column({ type: "boolean" })
   isPublished!: boolean;
@@ -36,7 +37,7 @@ class Product {
     this.title = productData.title;
     this.price = productData.price;
     this.description = productData.description;
-    this.imageUrl = productData.imageUrl;
+    this.imageUrl = null;
     this.isPublished = productData.isPublished;
   }
 
@@ -56,18 +57,35 @@ class Product {
     product.title = productData.title;
     product.price = productData.price;
     product.description = productData.description;
-    product.imageUrl = productData.imageUrl;
     product.isPublished = productData.isPublished;
 
     return productRepository().save(product);
   }
 
-  static async delete(id: number): Promise<boolean> {
+  /**
+   * Saves a new image URL on the product. undefined = product not found.
+   * Also returns the old URL, so the caller can delete the old file.
+   */
+  static async setImageUrl(
+    id: number,
+    imageUrl: string,
+  ): Promise<{ product: Product; oldImageUrl: string | null } | undefined> {
     const product = await productRepository().findOneBy({ id });
     if (!product) {
-      return false;
+      return undefined;
     }
-    return !!(await productRepository().remove(product));
+    const oldImageUrl = product.imageUrl;
+    product.imageUrl = imageUrl;
+    return { product: await productRepository().save(product), oldImageUrl };
+  }
+
+  /** Deletes the product. Returns the deleted product (to clean up its image), or undefined if not found. */
+  static async delete(id: number): Promise<Product | undefined> {
+    const product = await productRepository().findOneBy({ id });
+    if (!product) {
+      return undefined;
+    }
+    return productRepository().remove(product);
   }
 
   static async fetchProducts(): Promise<Product[]> {

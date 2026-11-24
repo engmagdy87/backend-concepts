@@ -4,6 +4,17 @@ Notes on backend concepts practiced in this repo. Newest entries first.
 
 Update this file when a feature teaches a concept worth keeping. Skip chores, formatting-only changes, and WIP commits.
 
+## 2026-11-25 — File upload and download
+
+- JSON can't carry a file. An upload uses **multipart/form-data**: the body is split into parts, one per field. multer reads it, saves the file, and gives the controller `req.file`.
+- Never trust the client with the file: the server picks the name (random UUID, so two `photo.jpg` never clash), the folder, and the size limit (2 MB → **413**). The type check uses the `mimetype` the client sends, so it's a basic check; reading the real content is "later".
+- Two requests, one Save button: create the product (JSON, zod as before), then upload its image. Every file belongs to a product that exists, and the same endpoint handles "change image".
+- Files and the database can get out of step. Delete the file **after** the database change, and a leftover file is only logged, never a failed request. Only delete files we own (`/images/...`), never an external URL.
+- Uploaded files are data, not code: `uploads/` is git-ignored. Served publicly with `express.static` under `/images`.
+- Download: headers tell the client what's coming (`Content-Type: application/pdf`) and to save it (`Content-Disposition: attachment; filename="quote.pdf"`). The cart comes from the token, so you can only download your own.
+- Streaming vs preloading: PDFKit pipes the PDF into the response piece by piece (`doc.pipe(res)`, then `doc.end()`). Nothing is held whole in memory or saved to disk.
+- Later: cloud storage (R2/S3) with presigned URLs. All disk code lives in `services/storage.service.ts`, so only that file would change.
+
 ## 2026-11-22 — Error handling: user mistake or real breakage?
 
 - The main question for any error: did the **user** do something wrong (4xx), or did something really **break** (500)? Our layers already split this: schema → 400, auth → 401/403, services → 404/409, and the error handler in `app.ts` turns anything unexpected into a generic 500.
