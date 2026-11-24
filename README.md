@@ -7,6 +7,7 @@ Express and TypeScript backend learning project. Products, users, and the cart l
 - [Backend reference](docs/BACKEND-REFERENCE.md) — durable mentor notes (naming, layers, drafts) for later projects
 - [Auth plan](docs/AUTH-PLAN.md) — signup/login, JWT, roles (done); cart for logged-in users only (done)
 - [Files plan](docs/FILES-PLAN.md) — product image upload and cart quote PDF (done)
+- [Pagination plan](docs/PAGINATION-PLAN.md) — `?page&limit` on product lists (done)
 - [Postman collection](postman/backend-concepts.postman_collection.json) — import into Postman (`baseUrl` = `http://localhost:3040`). When the API changes, update this file and sync it to Postman cloud (Cursor: Postman MCP; Claude Code: Postman REST API).
 - [Postman notes](docs/POSTMAN.md) — body types, environments, Share value vs Invite, Scripts → After response
 - [Mentor briefing](docs/MENTOR-BRIEFING.md) — snapshot after the auth chapters
@@ -45,6 +46,36 @@ Uploaded images are saved in `uploads/products/` (created automatically, git-ign
 ## API
 
 JSON request bodies are accepted. Unknown routes return `404` with `{ "message": "API not found" }`.
+
+### Pagination
+
+`GET /shop/products` and `GET /admin/products` return one page:
+
+```
+GET /shop/products?page=2&limit=3
+```
+
+| Query | Rules |
+| --- | --- |
+| `page` | Whole number ≥ 1. Default `1` |
+| `limit` | Whole number 1–50. Default `10` |
+
+```json
+{
+  "data": [ { "id": 10, "...": "..." } ],
+  "meta": {
+    "totalItems": 15,
+    "currentPage": 2,
+    "lastPage": 5,
+    "hasNextPage": true,
+    "hasPreviousPage": true,
+    "nextPage": 3,
+    "previousPage": 1
+  }
+}
+```
+
+Products are ordered by `id`. `nextPage` / `previousPage` are `null` when there is none. A page after the last one returns **200** with `data: []`. A bad `page` or `limit` (e.g. `abc`, `0`, `1.5`, `limit=500`) returns **400** `{ message: "Invalid query", errors: { field: [...] } }`.
 
 ### Validation
 
@@ -106,7 +137,7 @@ Everything under `/admin` needs an **admin** token: `401` without a valid token,
 | `PUT` | `/admin/products/:id` | Replace an existing product (id in the URL; full body) |
 | `POST` | `/admin/products/:id/image` | Upload or replace the product's image (multipart form-data, field `image`) |
 | `DELETE` | `/admin/delete-product/:id` | Delete a product (id in the URL, no body; also deletes its image file) |
-| `GET` | `/admin/products` | List all products |
+| `GET` | `/admin/products` | List all products, one page at a time (see [Pagination](#pagination)) |
 | `GET` | `/admin/products/:id` | Get a product by id |
 | `POST` | `/admin/add-user` | Create a user (optional `role`) |
 | `PUT` | `/admin/update-user/:id` | Replace a user (full body; does not change `role`) |
@@ -149,7 +180,7 @@ Shop routes return only products with `isPublished: true`.
 
 | Method | Path | Description |
 | --- | --- | --- |
-| `GET` | `/shop/products` | List published products |
+| `GET` | `/shop/products` | List published products, one page at a time (see [Pagination](#pagination)) |
 | `GET` | `/shop/products/:id` | Get a published product by id |
 
 ### Cart
@@ -183,12 +214,12 @@ routes/shop.route.ts        # Shop product routes
 routes/cart.route.ts        # Cart routes
 routes/auth.route.ts        # Signup, login, me
 middlewares/                # requireAuth (Bearer JWT → req.user), requireAdmin, validateBody (schema → 400), image upload (multer)
-schemas/                    # zod schemas: what a valid request body looks like
+schemas/                    # zod schemas: what a valid request body (or list query) looks like
 controllers/                # HTTP handlers (status codes + JSON)
 services/                   # Use-case glue (cart ↔ product, user create/update, login), image files on disk, quote PDF
 models/                     # Product / Cart / CartItem / User domain + persistence
 types/                      # Shared input / record types (+ req.user in express.d.ts)
-utils/                      # DataSource, number, password, token helpers
+utils/                      # DataSource, number, password, token, pagination helpers
 docs/                       # Learning notes, plans, Postman guide (not API runtime)
 uploads/                    # Uploaded product images (git-ignored)
 CHANGELOG.md / HANDOFF.md   # Stay at repo root (changelog + session handoff)

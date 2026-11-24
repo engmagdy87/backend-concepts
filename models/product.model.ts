@@ -3,6 +3,7 @@ import AppDataSource from "../utils/database.utils";
 import type { ProductInput } from "../types/product.types";
 import { parseId } from "../utils/number.utils";
 import CartItem from "./cart-item.model";
+import type { PaginationQuery } from "../schemas/pagination.schema";
 
 function productRepository() {
   return AppDataSource.getRepository(Product);
@@ -88,8 +89,16 @@ class Product {
     return productRepository().remove(product);
   }
 
-  static async fetchProducts(): Promise<Product[]> {
-    return productRepository().find();
+  /** One page of all products (published or not) + the total. Same rules as `fetchPublished`. */
+  static async fetchProducts({
+    page,
+    limit,
+  }: PaginationQuery): Promise<[Product[], number]> {
+    return productRepository().findAndCount({
+      order: { id: "ASC" },
+      skip: (page - 1) * limit,
+      take: limit,
+    });
   }
 
   static async fetchProductById(id: unknown): Promise<Product | undefined> {
@@ -100,8 +109,23 @@ class Product {
     return (await productRepository().findOneBy({ id: parsedId })) ?? undefined;
   }
 
-  static async fetchPublished(): Promise<Product[]> {
-    return productRepository().find({ where: { isPublished: true } });
+  /**
+   * One page of published products, plus how many there are in total.
+   * `findAndCount` runs two queries: the page (`LIMIT take OFFSET skip`)
+   * and a `COUNT(*)` with the same `where`.
+   * `order` keeps pages stable: without it MySQL may return rows in any order,
+   * so a product could show up on two pages (or on none).
+   */
+  static async fetchPublished({
+    page,
+    limit,
+  }: PaginationQuery): Promise<[Product[], number]> {
+    return productRepository().findAndCount({
+      where: { isPublished: true },
+      order: { id: "ASC" },
+      skip: (page - 1) * limit, // page 1 skips 0, page 2 skips `limit`, ...
+      take: limit,
+    });
   }
 
   static async fetchPublishedById(id: unknown): Promise<Product | undefined> {

@@ -2,10 +2,11 @@
 
 ## Goal
 
-Auth stages 1–3 are done, tagged, and released (`chapter-auth-users`, `chapter-auth-jwt`, `chapter-auth-cart`). The cart is login-only (`f7bf556` on `main`). Input validation (H3) is released as `chapter-validation` (`7476e5e`, 2026-11-22). Files (image upload + cart quote PDF) is released as `chapter-files` (`2b68799`, 2026-11-25). Next chapter: automated tests (M7).
+Auth stages 1–3 are done, tagged, and released (`chapter-auth-users`, `chapter-auth-jwt`, `chapter-auth-cart`). The cart is login-only (`f7bf556` on `main`). Input validation (H3) is released as `chapter-validation` (`7476e5e`, 2026-11-22). Files (image upload + cart quote PDF) is released as `chapter-files` (`2b68799`, 2026-11-25). Pagination is released as `chapter-pagination` (2026-11-25). Next chapter: automated tests (M7).
 
 ## Done
 
+- **Pagination chapter (released `chapter-pagination`, 2026-11-25):** see `docs/PAGINATION-PLAN.md`. `?page` (≥1, default 1) + `?limit` (1–50, default 10) on `GET /shop/products` and `GET /admin/products`; `findAndCount` ordered by `id`; response `{ data, meta }`; bad query → 400 "Invalid query". Shared `utils/pagination.utils.ts` (`parsePagination`, `buildPageMeta`); parsed in the controller because Express 5's `req.query` is read-only. Lists now return 10 by default, not all.
 - **Files chapter (released `chapter-files`, `2b68799`, 2026-11-25):** see `docs/FILES-PLAN.md`. Upload `POST /admin/products/:id/image` (multer, `uploads/products/`, `/images` static, old/deleted files removed), `imageUrl` nullable (user ran the SQL), `GET /cart/quote` streams a PDFKit PDF. All cases tested by the user in Postman. Later: R2/S3 storage, `sharp`, `file-type`, orders + invoice.
 - **Duplicate-email race (M2, 2026-11-22, merged to `main`):** `isDuplicateKeyError` moved from `models/cart.model.ts` to `utils/database.utils.ts`; `createUserService` and `updateUserService` catch `ER_DUP_ENTRY` → 409 (anything else re-thrown → 500). Reproduced before the fix (5 parallel signups: 201 + 4×500), after: 201 + 4×409; cart parallel-create still makes one cart. Test users deleted. Docs: CHANGELOG, LEARNING (error-handling entry, mapped to the user's course module), CODE_REVIEW. No chapter tag (a fix inside the current era).
 - **Input validation (released `chapter-validation`, `7476e5e`, 2026-11-22):** `zod@4.6.7`. `schemas/product.schema.ts` (`productSchema`), `schemas/user.schema.ts` (`userSchema`, `addUserSchema` with `role` enum default `customer`, looser `loginSchema`), `schemas/cart.schema.ts` (`cartItemSchema`, positive int). `middlewares/validate.middleware.ts` → `validateBody(schema)`: 400 `{ message: "Invalid body", errors: fieldErrors }`, else `req.body = result.data`. Wired on add/update product, signup, login, add/update user, cart add/remove. Body types come from `z.infer`. Removed `utils/validation.utils.ts` (`findMissingFields`), `USER_REQUIRED_FIELDS`, the add-user `isUserRole` check, and `parseId` in the cart service. Built in 3 steps, each `tsc` + HTTP-tested (test users/products/carts deleted after). Docs: README (Validation section), CHANGELOG, LEARNING, BACKEND-REFERENCE (both copies: inbox + "Types vs runtime validation" concept), CODE_REVIEW (H3 done, L6 mostly), MENTOR-BRIEFING. Postman local: descriptions updated; Signup / Add user / Update user examples use `test1234` (8+ rule), Login keeps `test123` (the user's existing accounts use it); 3 "→ 400" example requests. A slide deck "How Validation Flows" was made for the user (claude.ai artifact).
@@ -24,7 +25,7 @@ Auth stages 1–3 are done, tagged, and released (`chapter-auth-users`, `chapter
 
 ## In progress
 
-- Nothing in progress. Files chapter released 2026-11-25: `2b68799` on `main` (pushed, `feat/files` deleted), annotated tag + GitHub Release `chapter-files`, Postman cloud synced (cloud matched local except the expected wording fix).
+- Nothing in progress. Pagination chapter released 2026-11-25 as `chapter-pagination` (`feat/pagination` merged to `main`, pushed, branch deleted; Postman cloud synced).
 
 ## Decisions
 
@@ -67,7 +68,7 @@ Agreed order (one roadmap; `CODE_REVIEW.md` holds the quality items, `docs/BACKE
 1. **Automated tests (M7)** — first, so every later change is checked automatically. A "bad body → 400" test is the easy start.
 2. **Database schema file (M8)** — all the manual SQL in one file in the repo.
 3. **API path and status cleanup (M11)** — e.g. `add-product` → `POST /admin/products`.
-4. **List APIs** — sort, pagination, filter, search on product lists.
+4. **List APIs** — sort, filter, search on product lists (pagination done in `chapter-pagination`).
 5. **Prisma era** (`chapter-prisma`), with migrations.
 
 Also open, any time: small cleanups (L1, L5, L8, L9, L10, L12). Auth extras (logout, refresh, reset) stay in `docs/AUTH-PLAN.md` → Nice later.

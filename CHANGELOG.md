@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- Pagination on `GET /shop/products` and `GET /admin/products`: `?page` (≥ 1, default 1) and `?limit` (1–50, default 10). Response adds `meta` (`totalItems`, `currentPage`, `lastPage`, `hasNextPage`, `hasPreviousPage`, `nextPage`, `previousPage`). Bad query → **400** "Invalid query"
 - `POST /admin/products/:id/image`: upload a product image (multer, form-data field `image`; JPEG/PNG/WebP, max 2 MB). Saved in `uploads/products/` with a random name; `imageUrl` becomes `/images/<file>`. **400** no file / wrong type, **413** too big, **404** unknown product
 - `GET /images/<file>` serves uploaded images (`express.static`)
 - `GET /cart/quote`: the logged-in user's cart as a PDF download (PDFKit, streamed, not saved). **400** "Cart is empty"
@@ -42,6 +43,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Every visitor shared one cart (`find({ take: 1 })`): carts are looked up by `userId` with `Cart.getOrCreate(userId)`; concurrent first requests for the same user create one row (duplicate-key → re-read)
 
 ### Changed
+- `GET /shop/products` and `GET /admin/products` return at most `limit` products (10 by default) instead of all of them, ordered by `id`. Ask for more pages with `?page=`
 - `imageUrl` is no longer part of the add/update product body (a sent one is dropped); it's `null` until an image is uploaded. Manual SQL: `ALTER TABLE products MODIFY imageUrl VARCHAR(255) NULL;`
 - Uploading a new image deletes the old file, and deleting a product deletes its image file (only files we own under `/images/`, never external URLs)
 - Types for request bodies (`ProductInput`, `UserInput`, `AddUserBody`, `LoginBody`, cart bodies) come from the zod schemas (`z.infer`), so the type and the runtime check can't drift apart

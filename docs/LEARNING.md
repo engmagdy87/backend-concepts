@@ -4,6 +4,18 @@ Notes on backend concepts practiced in this repo. Newest entries first.
 
 Update this file when a feature teaches a concept worth keeping. Skip chores, formatting-only changes, and WIP commits.
 
+## 2026-11-25 — Pagination
+
+- Don't send the whole table. The client asks for one page (`?page=2&limit=3`) and the server sends only those rows plus a `meta` block to draw page buttons from.
+- skip / take is LIMIT / OFFSET: `skip: (page - 1) * limit`, `take: limit` becomes `LIMIT 3 OFFSET 3` in the SQL log. `findAndCount` also runs a `COUNT(*)` with the same `where`, the total the course gets from `countDocuments()`.
+- Always `order` when paginating. Without `ORDER BY`, MySQL may return rows in any order, so a product could appear on two pages or on none.
+- `meta` is plain math on the total: `lastPage = ceil(total / limit)` (at least 1), next / previous only when they exist (`null` otherwise). The API sends numbers; the frontend draws the buttons.
+- Query values are always strings, so the zod schema uses `z.coerce.number()`. Cap `limit` (50), or one request can ask for the whole table.
+- Express 5's `req.query` is read-only, so the query is parsed in the controller with a shared helper (`parsePagination`), not replaced by a middleware like `req.body`.
+- Write it once, use it twice: `utils/pagination.utils.ts` serves the shop and admin lists (lecture 344).
+- A page past the end is a normal empty answer (**200**, `data: []`), not an error.
+- Later: sort / filter / search on the same lists, and cursor pagination (`?after=<id>`) for infinite scroll on big tables.
+
 ## 2026-11-25 — File upload and download
 
 - JSON can't carry a file. An upload uses **multipart/form-data**: the body is split into parts, one per field. multer reads it, saves the file, and gives the controller `req.file`.

@@ -45,7 +45,29 @@
           "request": {
             "method": "GET",
             "header": [],
-            "url": "{{baseUrl}}/admin/products"
+            "url": {
+              "raw": "{{baseUrl}}/admin/products?page=1&limit=5",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "products"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number, ≥ 1 (default 1)"
+                },
+                {
+                  "key": "limit",
+                  "value": "5",
+                  "description": "Items per page, 1–50 (default 10)"
+                }
+              ]
+            },
+            "description": "All products (published or not). Paginated: `?page` (≥ 1, default 1) and `?limit` (1–50, default 10), both optional; uncheck them in Params to use the defaults. Response `{ data, meta }`, `meta` = `{ totalItems, currentPage, lastPage, hasNextPage, hasPreviousPage, nextPage, previousPage }` (next/previous are `null` when there is none). Ordered by `id`. A page after the last one → 200 with `data: []`. Bad `page`/`limit` → 400 `{ message: \"Invalid query\", errors }`."
           }
         },
         {
@@ -189,7 +211,60 @@
           "request": {
             "method": "GET",
             "header": [],
-            "url": "{{baseUrl}}/shop/products"
+            "url": {
+              "raw": "{{baseUrl}}/shop/products?page=1&limit=5",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "shop",
+                "products"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number, ≥ 1 (default 1)"
+                },
+                {
+                  "key": "limit",
+                  "value": "5",
+                  "description": "Items per page, 1–50 (default 10)"
+                }
+              ]
+            },
+            "description": "Published products only. Paginated: `?page` (≥ 1, default 1) and `?limit` (1–50, default 10), both optional; uncheck them in Params to use the defaults. Response `{ data, meta }`, `meta` = `{ totalItems, currentPage, lastPage, hasNextPage, hasPreviousPage, nextPage, previousPage }` (next/previous are `null` when there is none). Ordered by `id`. A page after the last one → 200 with `data: []`. Bad `page`/`limit` → 400 `{ message: \"Invalid query\", errors }`."
+          }
+        },
+        {
+          "id": "f3c07732-bfa1-4248-a84c-f11c0cf43566",
+          "name": "List published products (bad query → 400)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/shop/products?page=abc&limit=500",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "shop",
+                "products"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "abc",
+                  "description": "Page number, ≥ 1 (default 1)"
+                },
+                {
+                  "key": "limit",
+                  "value": "500",
+                  "description": "Items per page, 1–50 (default 10)"
+                }
+              ]
+            },
+            "description": "Example of query validation: expect 400 `{ message: \"Invalid query\", errors: { page, limit } }` (`page` is not a number, `limit` is over 50)."
           }
         },
         {

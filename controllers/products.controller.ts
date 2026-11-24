@@ -7,6 +7,7 @@ import {
   deleteProductImage,
   productImageUrl,
 } from "../services/storage.service";
+import { buildPageMeta, parsePagination } from "../utils/pagination.utils";
 
 export const addProduct = async (
   req: Request<unknown, unknown, ProductInput>,
@@ -97,9 +98,15 @@ export const uploadImage = async (
   res.json({ message: "Image uploaded successfully", data: result.product });
 };
 
-export const fetchProducts = async (_req: Request, res: Response) => {
-  const products = await Product.fetchProducts();
-  res.json({ data: products });
+export const fetchProducts = async (req: Request, res: Response) => {
+  const pagination = parsePagination(req.query); // same rules as the shop list
+  if (!pagination.ok) {
+    return res.status(400).json({ message: "Invalid query", errors: pagination.errors });
+  }
+  const { page, limit } = pagination;
+
+  const [products, totalItems] = await Product.fetchProducts({ page, limit });
+  res.json({ data: products, meta: buildPageMeta(totalItems, page, limit) });
 };
 
 export const fetchProductById = async (
@@ -113,9 +120,15 @@ export const fetchProductById = async (
   res.json({ data: product });
 };
 
-export const fetchShoppingProducts = async (_req: Request, res: Response) => {
-  const products = await Product.fetchPublished();
-  res.json({ data: products });
+export const fetchShoppingProducts = async (req: Request, res: Response) => {
+  const pagination = parsePagination(req.query); // ?page=2&limit=3, both optional
+  if (!pagination.ok) {
+    return res.status(400).json({ message: "Invalid query", errors: pagination.errors });
+  }
+  const { page, limit } = pagination;
+
+  const [products, totalItems] = await Product.fetchPublished({ page, limit });
+  res.json({ data: products, meta: buildPageMeta(totalItems, page, limit) });
 };
 
 export const fetchShoppingProductById = async (
