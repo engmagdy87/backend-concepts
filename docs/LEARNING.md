@@ -4,6 +4,19 @@ Notes on backend concepts practiced in this repo. Newest entries first.
 
 Update this file when a feature teaches a concept worth keeping. Skip chores, formatting-only changes, and WIP commits.
 
+## 2026-11-26 — Payments with Stripe
+
+- Card data never touches our server. Stripe's hosted Checkout page collects it; our server only says "this user wants to pay X" (a Checkout Session) and later asks "did they?".
+- Prices come from the database, never from the request: `POST /checkout` has no body.
+- Never trust the success URL. Anyone can open `/checkout/success`; the server asks Stripe (`sessions.retrieve`) and only marks the order paid when `payment_status` is `paid`.
+- Idempotent: `UNIQUE (stripeSessionId)` and "update only if still pending" mean a refresh, or two requests at once, can't pay or empty the cart twice.
+- A redirect can't carry the `Authorization` header, so the success route is public. That's fine because it trusts Stripe's answer, not the caller.
+- An order copies each product's title and price, so editing or deleting the product later never changes an old order (`productId` → `NULL` on delete).
+- Money: Stripe counts in cents (`Math.round(price * 100)`); add up in cents. `DECIMAL` columns come back from MySQL as text, so a small transformer turns them into numbers.
+- All or nothing: saving an order with its items is one cascade `save` (TypeORM wraps it in a transaction). Marking paid + emptying the cart touch two unrelated tables, so that one is a hand-written `transaction`.
+- `select: false` keeps an internal column (the Stripe session id) out of every API answer.
+- Later: webhooks (`checkout.session.completed`), so the order is paid even if the user closes the tab before the success page; stock, refunds, tax, invoices.
+
 ## 2026-11-25 — Pagination
 
 - Don't send the whole table. The client asks for one page (`?page=2&limit=3`) and the server sends only those rows plus a `meta` block to draw page buttons from.

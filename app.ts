@@ -8,6 +8,8 @@ import adminRoutes from "./routes/admin.route";
 import shopRoutes from "./routes/shop.route";
 import cartRoutes from "./routes/cart.route";
 import authRoutes from "./routes/auth.route";
+import checkoutRoutes from "./routes/checkout.route";
+import ordersRoutes from "./routes/orders.route";
 import { requireAdmin, requireAuth } from "./middlewares/auth.middleware";
 import { PRODUCT_IMAGES_DIR } from "./services/storage.service";
 
@@ -28,6 +30,10 @@ app.use("/shop", shopRoutes);
 // Cart is for logged-in users only. No token or a bad one → 401 (sign up / log in).
 app.use("/cart", requireAuth, cartRoutes);
 app.use("/auth", authRoutes);
+// Payments (Stripe). Each route sets its own login rule.
+app.use("/checkout", checkoutRoutes);
+// Your own orders: logged-in users only.
+app.use("/orders", requireAuth, ordersRoutes);
 
 app.use((_req, res) => {
   res.status(404).json({

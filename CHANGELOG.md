@@ -7,6 +7,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- Payments with Stripe Checkout (test mode): `POST /checkout` (login) turns the cart into a `pending` order and returns Stripe's payment page `url`; `GET /checkout/success` asks Stripe whether the session is paid, then marks the order `paid` and empties the cart; `GET /checkout/cancel`. Prices always come from the database
+- `orders` and `order_items` tables (manual SQL in the README); each order item copies the product's title and price
+- `GET /orders` (login): your own orders, newest first, with their items
+- `STRIPE_SECRET_KEY` (must be `sk_test_...`) and `APP_URL` in `.env`; the server refuses to start without them
 - Pagination on `GET /shop/products` and `GET /admin/products`: `?page` (≥ 1, default 1) and `?limit` (1–50, default 10). Response adds `meta` (`totalItems`, `currentPage`, `lastPage`, `hasNextPage`, `hasPreviousPage`, `nextPage`, `previousPage`). Bad query → **400** "Invalid query"
 - `POST /admin/products/:id/image`: upload a product image (multer, form-data field `image`; JPEG/PNG/WebP, max 2 MB). Saved in `uploads/products/` with a random name; `imageUrl` becomes `/images/<file>`. **400** no file / wrong type, **413** too big, **404** unknown product
 - `GET /images/<file>` serves uploaded images (`express.static`)

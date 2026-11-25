@@ -1,12 +1,7 @@
 import jwt from "jsonwebtoken";
 import type { TokenPayload } from "../types/auth.types";
 import { isUserRole } from "../types/user.types";
-
-function requireEnv(name: string): string {
-  const value = process.env[name];
-  if (!value) throw new Error(`${name} is missing in .env`);
-  return value;
-}
+import { requireEnv } from "./env.utils";
 
 const JWT_ALGORITHM = "HS256";
 const JWT_SECRET = requireEnv("JWT_SECRET");

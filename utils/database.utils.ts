@@ -1,4 +1,4 @@
-import { DataSource } from "typeorm";
+import { DataSource, ValueTransformer } from "typeorm";
 
 export const AppDataSource = new DataSource({
   type: "mysql",
@@ -27,5 +27,14 @@ export function isDuplicateKeyError(err: unknown): boolean {
     err.code === "ER_DUP_ENTRY"
   );
 }
+
+/**
+ * MySQL sends DECIMAL values back as text ("19.99") so no cents are lost.
+ * This turns them into numbers when reading. Fine for prices with 2 decimals.
+ */
+export const decimalToNumber: ValueTransformer = {
+  to: (value: number) => value,
+  from: (value: string | null) => (value === null ? null : Number(value)),
+};
 
 export default AppDataSource;

@@ -383,6 +383,69 @@
       ]
     },
     {
+      "id": "f2515072-d2bc-4733-be66-d62be568f043",
+      "name": "Checkout",
+      "description": "Payments with Stripe (test mode). Run Login first. \"Start checkout\" turns your cart into a `pending` order and returns Stripe's payment page `url`: open it in the browser and pay with card `4242 4242 4242 4242`, any future date, any CVC. Stripe then sends the browser to `/checkout/success`, which asks Stripe whether it's paid; if yes the order becomes `paid` and the cart is emptied.",
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "{{token}}",
+            "type": "string"
+          }
+        ]
+      },
+      "item": [
+        {
+          "id": "55fdfd9d-9444-41e4-8b04-e4a8b57e0c2b",
+          "name": "Start checkout",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{baseUrl}}/checkout",
+            "description": "No body: the server reads your cart and our prices. 201 `{ data: { orderId, url } }`: open `url` in the browser to pay. 400 \"Cart is empty\". 401 without a token."
+          }
+        },
+        {
+          "id": "2e100ef9-0311-4d2f-8f69-02352f19002a",
+          "name": "My orders",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/orders",
+            "description": "`GET /orders`: your own orders (paid and pending), newest first, each with its `items` (title and price copied at checkout). 401 without a token."
+          }
+        },
+        {
+          "id": "cd6adfbe-be7f-4a4b-93dd-32b84021ef59",
+          "name": "Payment success (opened by Stripe)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "url": "{{baseUrl}}/checkout/success?session_id=cs_test_paste_here",
+            "description": "Normally the browser opens this after paying. Public (no token): the server asks Stripe whether the session is paid. 200 \"Payment received\" (order → `paid`, cart emptied; safe to repeat). 402 not paid yet, 404 unknown session, 400 missing/invalid `session_id`."
+          }
+        },
+        {
+          "id": "faf79d9e-6e6f-4e1c-a687-c95ab418350e",
+          "name": "Payment cancelled (opened by Stripe)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "url": "{{baseUrl}}/checkout/cancel",
+            "description": "The browser lands here when the user leaves Stripe's page. Nothing changes; the order stays `pending`."
+          }
+        }
+      ]
+    },
+    {
       "id": "ab8e2b0a-494f-4492-9d17-283b23a06202",
       "name": "User",
       "description": "Admin user management under `/admin`. Requires an admin token (Bearer `{{token}}`, inherited by every request here): 401 no/bad token, 403 not admin. Responses never include `password`.",

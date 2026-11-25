@@ -1,6 +1,6 @@
 # backend-concepts
 
-Express and TypeScript backend learning project. Products, users, and the cart live in MySQL (admin = full catalog, shop = published only). Each logged-in user has their own cart (`carts`) plus items (`cart_items`). Users sign up and log in for a JWT; `/cart` needs that token, and `/admin` needs an admin token. Admins can upload a product image (saved on local disk, served at `/images/...`), and a logged-in user can download their cart as a PDF quote.
+Express and TypeScript backend learning project. Products, users, and the cart live in MySQL (admin = full catalog, shop = published only). Each logged-in user has their own cart (`carts`) plus items (`cart_items`). Users sign up and log in for a JWT; `/cart` needs that token, and `/admin` needs an admin token. Admins can upload a product image (saved on local disk, served at `/images/...`), and a logged-in user can download their cart as a PDF quote, pay for it with Stripe (test mode), and see their orders.
 
 - [Changelog](CHANGELOG.md) — shipped API and product changes
 - [Learning log](docs/LEARNING.md) — backend concepts practiced here
@@ -8,6 +8,7 @@ Express and TypeScript backend learning project. Products, users, and the cart l
 - [Auth plan](docs/AUTH-PLAN.md) — signup/login, JWT, roles (done); cart for logged-in users only (done)
 - [Files plan](docs/FILES-PLAN.md) — product image upload and cart quote PDF (done)
 - [Pagination plan](docs/PAGINATION-PLAN.md) — `?page&limit` on product lists (done)
+- [Payments plan](docs/PAYMENTS-PLAN.md) — Stripe Checkout, orders (done)
 - [Postman collection](postman/backend-concepts.postman_collection.json) — import into Postman (`baseUrl` = `http://localhost:3040`). When the API changes, update this file and sync it to Postman cloud (Cursor: Postman MCP; Claude Code: Postman REST API).
 - [Postman notes](docs/POSTMAN.md) — body types, environments, Share value vs Invite, Scripts → After response
 - [Mentor briefing](docs/MENTOR-BRIEFING.md) — snapshot after the auth chapters
@@ -18,7 +19,7 @@ Requires [Yarn 4](https://yarnpkg.com/) (this repo uses Yarn 4.12).
 
 ```bash
 yarn install
-cp .env.example .env   # fill in DB_* and JWT_SECRET
+cp .env.example .env   # fill in DB_*, JWT_SECRET, STRIPE_SECRET_KEY, APP_URL
 yarn start
 ```
 
@@ -42,6 +43,32 @@ ALTER TABLE products MODIFY imageUrl VARCHAR(255) NULL;
 ```
 
 Uploaded images are saved in `uploads/products/` (created automatically, git-ignored).
+
+Payments need a free Stripe account in **test mode**: put its secret key (`sk_test_...`, Dashboard → Developers → API keys) in `STRIPE_SECRET_KEY`. The server refuses to start without one, or with a live key. `APP_URL` is where this API runs (`http://localhost:3040`); Stripe sends the browser back there. Orders need two tables (run once):
+
+```sql
+CREATE TABLE orders (
+  id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  userId INT UNSIGNED NOT NULL,
+  status ENUM('pending', 'paid') NOT NULL DEFAULT 'pending',
+  total DECIMAL(10, 2) NOT NULL,
+  stripeSessionId VARCHAR(255) NULL,
+  createdAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT uq_orders_stripe_session UNIQUE (stripeSessionId),
+  CONSTRAINT fk_orders_user FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE order_items (
+  id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  orderId INT UNSIGNED NOT NULL,
+  productId INT UNSIGNED NULL,
+  title VARCHAR(255) NOT NULL,
+  price DECIMAL(10, 2) NOT NULL,
+  quantity INT UNSIGNED NOT NULL,
+  CONSTRAINT fk_order_items_order FOREIGN KEY (orderId) REFERENCES orders(id) ON DELETE CASCADE,
+  CONSTRAINT fk_order_items_product FOREIGN KEY (productId) REFERENCES products(id) ON DELETE SET NULL
+);
+```
 
 ## API
 
@@ -205,6 +232,21 @@ Add / remove body:
 }
 ```
 
+### Checkout and orders
+
+Payments use Stripe Checkout in test mode. Card details only ever go to Stripe's own page.
+
+| Method | Path | Login | Description |
+| --- | --- | --- | --- |
+| `POST` | `/checkout` | yes | Turn your cart into a `pending` order and get Stripe's payment page. No body |
+| `GET` | `/checkout/success?session_id=...` | no | Stripe sends the browser here after paying |
+| `GET` | `/checkout/cancel` | no | Stripe sends the browser here if the user leaves its page |
+| `GET` | `/orders` | yes | Your own orders, newest first, with their items |
+
+1. `POST /checkout` reads your cart and **our** prices, saves a `pending` order (each item copies the product's title and price), and asks Stripe for a Checkout Session. **201** `{ data: { orderId, url } }`; **400** "Cart is empty".
+2. Open `url` and pay with the test card `4242 4242 4242 4242` (any future date, any CVC).
+3. Stripe redirects to `/checkout/success`. The server asks Stripe whether that session is paid. If yes: the order becomes `paid` and the cart is emptied (one transaction). **200** "Payment received", also on a refresh (nothing changes twice). **402** not paid, **404** unknown session, **400** missing `session_id`. No token is needed: a redirect can't carry one, and the answer comes from Stripe, not from the URL.
+
 ## Layout
 
 ```
@@ -213,13 +255,15 @@ routes/admin.route.ts       # Admin product + user routes
 routes/shop.route.ts        # Shop product routes
 routes/cart.route.ts        # Cart routes
 routes/auth.route.ts        # Signup, login, me
+routes/checkout.route.ts    # Start checkout (login), success / cancel (public)
+routes/orders.route.ts      # Your orders
 middlewares/                # requireAuth (Bearer JWT → req.user), requireAdmin, validateBody (schema → 400), image upload (multer)
 schemas/                    # zod schemas: what a valid request body (or list query) looks like
 controllers/                # HTTP handlers (status codes + JSON)
 services/                   # Use-case glue (cart ↔ product, user create/update, login), image files on disk, quote PDF
-models/                     # Product / Cart / CartItem / User domain + persistence
+models/                     # Product / Cart / CartItem / User / Order / OrderItem domain + persistence
 types/                      # Shared input / record types (+ req.user in express.d.ts)
-utils/                      # DataSource, number, password, token, pagination helpers
+utils/                      # DataSource, env, number, password, token, pagination helpers, Stripe client
 docs/                       # Learning notes, plans, Postman guide (not API runtime)
 uploads/                    # Uploaded product images (git-ignored)
 CHANGELOG.md / HANDOFF.md   # Stay at repo root (changelog + session handoff)
@@ -234,6 +278,13 @@ flowchart LR
   App --> CartGuard["requireAuth"]
   CartGuard --> CartRt["routes/cart.route.ts"]
   App --> AuthRt["routes/auth.route.ts"]
+  App --> CheckoutRt["routes/checkout.route.ts"]
+  App --> OrdersGuard["requireAuth"]
+  OrdersGuard --> OrdersRt["routes/orders.route.ts"]
+  CheckoutRt --> CheckoutSvc["checkout.service.ts"]
+  CheckoutSvc --> Stripe["Stripe API"]
+  CheckoutSvc --> OrderModel["order.model.ts\norder-item.model.ts"]
+  OrdersRt --> OrderModel
   App --> NotFound["404 JSON"]
   App --> Images["/images\nexpress.static"]
   Images --> UploadsDir["uploads/products/"]
@@ -260,4 +311,4 @@ flowchart LR
   CartCtrl --> Pdf["pdf.service.ts\nPDFKit"]
 ```
 
-A request hits `app.ts`, which parses the body and mounts `/admin`, `/shop`, `/cart`, or `/auth`. `/admin` first runs `requireAuth` (verify the Bearer JWT, set `req.user`) and `requireAdmin` (role must be `admin`). Product admin/shop handlers use the product controller and MySQL-backed model. User and auth handlers go through services that hash passwords, keep emails unique, and sign tokens. `/cart` runs `requireAuth` only: the cart belongs to `req.user.userId`. Cart handlers go through a service that checks published products and updates that user's cart in MySQL. Routes that take a body run `validateBody(schema)` before the controller, so a bad body gets a 400 and never reaches it. An image upload runs multer first (it saves the file in `uploads/products/`), then the controller stores `/images/<file>` on the product; `storage.service.ts` deletes old files. `/images` serves those files with `express.static`. `GET /cart/quote` streams the user's cart as a PDF from `pdf.service.ts`, without saving it.
+A request hits `app.ts`, which parses the body and mounts `/admin`, `/shop`, `/cart`, or `/auth`. `/admin` first runs `requireAuth` (verify the Bearer JWT, set `req.user`) and `requireAdmin` (role must be `admin`). Product admin/shop handlers use the product controller and MySQL-backed model. User and auth handlers go through services that hash passwords, keep emails unique, and sign tokens. `/cart` runs `requireAuth` only: the cart belongs to `req.user.userId`. Cart handlers go through a service that checks published products and updates that user's cart in MySQL. Routes that take a body run `validateBody(schema)` before the controller, so a bad body gets a 400 and never reaches it. An image upload runs multer first (it saves the file in `uploads/products/`), then the controller stores `/images/<file>` on the product; `storage.service.ts` deletes old files. `/images` serves those files with `express.static`. `GET /cart/quote` streams the user's cart as a PDF from `pdf.service.ts`, without saving it. `/checkout` turns the cart into an order and talks to Stripe through `checkout.service.ts`; `/orders` (behind `requireAuth`) lists the user's own orders.
