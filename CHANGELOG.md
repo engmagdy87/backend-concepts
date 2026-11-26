@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- CORS (`cors` package): browser pages on the addresses in `CORS_ORIGIN` (comma-separated, in `.env`) may call the API; any other address gets no permission
 - Payments with Stripe Checkout (test mode): `POST /checkout` (login) turns the cart into a `pending` order and returns Stripe's payment page `url`; `GET /checkout/success` asks Stripe whether the session is paid, then marks the order `paid` and empties the cart; `GET /checkout/cancel`. Prices always come from the database
 - `orders` and `order_items` tables (manual SQL in the README); each order item copies the product's title and price
 - `GET /orders` (login): your own orders, newest first, with their items
@@ -33,6 +34,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `carts.userId` (`UNIQUE`, FK → `users.id` `ON DELETE CASCADE`); one cart per logged-in user. SQL in `docs/AUTH-PLAN.md`
 
 ### Fixed
+- `GET /admin/products/:id`, `GET /admin/users/:id` and `GET /shop/products/:id` returned **404** for a non-number id like `abc`; every `:id` route now returns **400** for that (and **404** only for a valid id with no row)
 - Two signups (or admin add-user) with the same email at the same moment returned **500** for the second one; MySQL's duplicate-email error now returns **409** "Email already exists". Same for update-user changing to an email someone just took (409 "Email already in use")
 - `POST /cart/items` with a non-number `productId` (e.g. `"abc"`) returned **404**; it now returns **400**
 - Add/update product with a missing or wrong-typed field returned **500** or saved bad data; it now returns **400**
@@ -47,6 +49,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Every visitor shared one cart (`find({ take: 1 })`): carts are looked up by `userId` with `Cart.getOrCreate(userId)`; concurrent first requests for the same user create one row (duplicate-key → re-read)
 
 ### Changed
+- Admin paths are REST style: `POST /admin/products` (was `/admin/add-product`), `DELETE /admin/products/:id` (was `/admin/delete-product/:id`), `POST /admin/users` (was `/admin/add-user`), `PUT /admin/users/:id` (was `/admin/update-user/:id`), `DELETE /admin/users/:id` (was `/admin/delete-user/:id`). The old paths return **404**
 - `GET /shop/products` and `GET /admin/products` return at most `limit` products (10 by default) instead of all of them, ordered by `id`. Ask for more pages with `?page=`
 - `imageUrl` is no longer part of the add/update product body (a sent one is dropped); it's `null` until an image is uploaded. Manual SQL: `ALTER TABLE products MODIFY imageUrl VARCHAR(255) NULL;`
 - Uploading a new image deletes the old file, and deleting a product deletes its image file (only files we own under `/images/`, never external URLs)

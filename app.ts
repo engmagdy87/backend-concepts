@@ -2,6 +2,7 @@ import "dotenv/config";
 import "reflect-metadata";
 import express, { NextFunction, Request, Response } from "express";
 import bodyParser from "body-parser";
+import cors from "cors";
 import AppDataSource from "./utils/database.utils";
 
 import adminRoutes from "./routes/admin.route";
@@ -16,6 +17,17 @@ import { PRODUCT_IMAGES_DIR } from "./services/storage.service";
 const app = express();
 
 app.disable("x-powered-by"); // don't tell clients which framework we run
+
+// CORS: which websites may call this API from a browser.
+// A browser blocks a page on http://localhost:5173 from reading answers from
+// http://localhost:3040 (another "origin") unless the API says it's allowed.
+// CORS_ORIGIN in .env lists the allowed addresses, comma-separated. Missing →
+// none. Postman and curl aren't browsers, so CORS never applies to them.
+const allowedOrigins = (process.env.CORS_ORIGIN ?? "")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+app.use(cors({ origin: allowedOrigins }));
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));

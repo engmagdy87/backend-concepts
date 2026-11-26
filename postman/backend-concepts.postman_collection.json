@@ -116,7 +116,7 @@
                 }
               }
             },
-            "url": "{{baseUrl}}/admin/add-product",
+            "url": "{{baseUrl}}/admin/products",
             "description": "201 with the new product (`imageUrl` is `null` until an image is uploaded with \"Upload product image\"). Body is validated first: `title` 1–255 chars, `price` number ≥ 0, `description` non-empty, `isPublished` boolean. A bad body → 400 listing every bad field. Unknown fields (e.g. `id`, `imageUrl`) are dropped. Sets `productId` on success."
           }
         },
@@ -140,7 +140,7 @@
                 }
               }
             },
-            "url": "{{baseUrl}}/admin/add-product",
+            "url": "{{baseUrl}}/admin/products",
             "description": "Example of validation: expect 400 `{ message: \"Invalid body\", errors: { title, price, description, isPublished } }`. Every bad field is listed at once; `role` is not an error, it is simply dropped. Needs an admin token like the rest of this folder."
           }
         },
@@ -196,7 +196,7 @@
             "method": "DELETE",
             "header": [],
             "description": "400 if the id is not a positive integer. 404 if the product does not exist. Also deletes the product's uploaded image file (if it has one).",
-            "url": "{{baseUrl}}/admin/delete-product/{{productId}}"
+            "url": "{{baseUrl}}/admin/products/{{productId}}"
           }
         }
       ]
@@ -517,7 +517,7 @@
               }
             },
             "description": "Body rules: valid `email`, `password` 8–72 chars, `firstName` / `lastName` 1–100 chars. `role` is optional: `customer` (default) or `admin`; anything else → 400. A bad body → 400 listing every bad field. 409 if the email already exists. Sets `userId` on success.",
-            "url": "{{baseUrl}}/admin/add-user"
+            "url": "{{baseUrl}}/admin/users"
           }
         },
         {
@@ -541,7 +541,7 @@
               }
             },
             "description": "Full replace: same body rules as Add user (no `role`; if sent it is dropped, the role never changes). Password is re-hashed. 404 if the user does not exist, 409 if the email belongs to another user.",
-            "url": "{{baseUrl}}/admin/update-user/{{userId}}"
+            "url": "{{baseUrl}}/admin/users/{{userId}}"
           }
         },
         {
@@ -551,7 +551,7 @@
             "method": "DELETE",
             "header": [],
             "description": "400 if the id is not a positive integer. 404 if the user does not exist.",
-            "url": "{{baseUrl}}/admin/delete-user/{{userId}}"
+            "url": "{{baseUrl}}/admin/users/{{userId}}"
           }
         }
       ]

@@ -1,7 +1,6 @@
 import { Request, Response } from "express";
 import User from "../models/user.model";
 import type { AddUserBody, UserInput } from "../types/user.types";
-import { parseId } from "../utils/number.utils";
 import { createUserService, updateUserService } from "../services/user.service";
 
 export const addUser = async (
@@ -26,13 +25,7 @@ export const updateUser = async (
   req: Request<{ id: string }, unknown, UserInput>,
   res: Response,
 ) => {
-  const parsedId = parseId(req.params.id);
-
-  if (parsedId === null) {
-    return res.status(400).json({
-      message: "id must be a positive integer",
-    });
-  }
+  const parsedId = Number(req.params.id); // already checked by validateIdParam (400)
 
   const result = await updateUserService(parsedId, req.body);
 
@@ -50,13 +43,7 @@ export const deleteUser = async (
   req: Request<{ id: string }, unknown, unknown>,
   res: Response,
 ) => {
-  const parsedId = parseId(req.params.id);
-
-  if (parsedId === null) {
-    return res.status(400).json({
-      message: "id must be a positive integer",
-    });
-  }
+  const parsedId = Number(req.params.id); // already checked by validateIdParam (400)
 
   const deleted = await User.delete(parsedId);
   if (!deleted) {

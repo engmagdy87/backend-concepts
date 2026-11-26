@@ -1,7 +1,6 @@
 import { Request, Response } from "express";
 import Product from "../models/product.model";
 import type { ProductInput } from "../types/product.types";
-import { parseId } from "../utils/number.utils";
 import {
   deleteFile,
   deleteProductImage,
@@ -26,13 +25,7 @@ export const updateProduct = async (
   req: Request<{ id: string }, unknown, ProductInput>,
   res: Response,
 ) => {
-  const parsedId = parseId(req.params.id);
-
-  if (parsedId === null) {
-    return res.status(400).json({
-      message: "id must be a positive integer",
-    });
-  }
+  const parsedId = Number(req.params.id); // already checked by validateIdParam (400)
 
   const updatedProduct = await Product.update(parsedId, req.body);
   if (!updatedProduct) {
@@ -49,13 +42,7 @@ export const deleteProduct = async (
   req: Request<{ id: string }, unknown, unknown>,
   res: Response,
 ) => {
-  const parsedId = parseId(req.params.id);
-
-  if (parsedId === null) {
-    return res.status(400).json({
-      message: "id must be a positive integer",
-    });
-  }
+  const parsedId = Number(req.params.id); // already checked by validateIdParam (400)
 
   const deleted = await Product.delete(parsedId);
   if (!deleted) {

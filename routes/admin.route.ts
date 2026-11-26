@@ -24,12 +24,17 @@ import { addUserSchema, userSchema } from "../schemas/user.schema";
 
 const router = express.Router();
 
+// REST style: the URL names the thing (products, users), the HTTP method
+// names the action (GET read, POST create, PUT replace, DELETE remove).
+// validateIdParam on every :id route: `abc` → 400 before anything else runs;
+// a real id with no row → 404 from the controller.
+
 router.get("/products", fetchProducts);
-router.get("/products/:id", fetchProductById);
+router.get("/products/:id", validateIdParam, fetchProductById);
 // validateBody runs before the controller: a bad body never reaches it (400).
-router.put("/products/:id", validateBody(productSchema), updateProduct);
-router.post("/add-product", validateBody(productSchema), addProduct);
-router.delete("/delete-product/:id", deleteProduct);
+router.put("/products/:id", validateIdParam, validateBody(productSchema), updateProduct);
+router.post("/products", validateBody(productSchema), addProduct);
+router.delete("/products/:id", validateIdParam, deleteProduct);
 // multipart/form-data, field "image". Runs left to right:
 // check the id (400) → multer saves the file → controller saves the URL.
 router.post(
@@ -39,10 +44,10 @@ router.post(
   uploadImage,
 );
 
-router.post("/add-user", validateBody(addUserSchema), addUser);
-router.put("/update-user/:id", validateBody(userSchema), updateUser);
-router.delete("/delete-user/:id", deleteUser);
+router.post("/users", validateBody(addUserSchema), addUser);
+router.put("/users/:id", validateIdParam, validateBody(userSchema), updateUser);
+router.delete("/users/:id", validateIdParam, deleteUser);
 router.get("/users", fetchUsers);
-router.get("/users/:id", fetchUserById);
+router.get("/users/:id", validateIdParam, fetchUserById);
 
 export default router;

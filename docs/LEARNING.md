@@ -4,6 +4,15 @@ Notes on backend concepts practiced in this repo. Newest entries first.
 
 Update this file when a feature teaches a concept worth keeping. Skip chores, formatting-only changes, and WIP commits.
 
+## 2026-11-26 — REST basics and CORS
+
+- REST: the URL names a thing (a resource: `/admin/products`, `/admin/products/7`), the HTTP method names the action (`GET` read, `POST` create, `PUT` replace, `DELETE` remove). Paths like `/add-product` put the action in the URL instead, which is the older "RPC" style.
+- Stateless: every request carries everything needed (the JWT), so the server keeps no session.
+- One rule for ids: not a number → 400 (the request is wrong), a number with no row → 404 (the thing doesn't exist). One middleware (`validateIdParam`) on every `:id` route keeps it consistent.
+- CORS is a **browser** rule. A page on `http://localhost:3000` calling `http://localhost:3040` is another "origin"; the server still answers, but the browser hides the answer from the page unless the API sends `Access-Control-Allow-Origin` for that address. Postman and curl don't care.
+- Requests with an `Authorization` header make the browser ask first with an `OPTIONS` "preflight"; the `cors` package answers it.
+- Allow a list of known addresses (`CORS_ORIGIN`), not `*`, so random websites can't use the API from a visitor's browser.
+
 ## 2026-11-26 — Payments with Stripe
 
 - Card data never touches our server. Stripe's hosted Checkout page collects it; our server only says "this user wants to pay X" (a Checkout Session) and later asks "did they?".

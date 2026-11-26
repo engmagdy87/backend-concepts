@@ -2,10 +2,11 @@
 
 ## Goal
 
-Auth stages 1–3 are done, tagged, and released (`chapter-auth-users`, `chapter-auth-jwt`, `chapter-auth-cart`). The cart is login-only (`f7bf556` on `main`). Input validation (H3) is released as `chapter-validation` (`7476e5e`, 2026-11-22). Files (image upload + cart quote PDF) is released as `chapter-files` (`2b68799`, 2026-11-25). Pagination is released as `chapter-pagination` (2026-11-25). Payments (Stripe test mode, orders) is released as `chapter-payments` (2026-11-26). Course section 22 (async requests) needed no code. Next chapter: automated tests (M7), or the next course section the user pastes.
+Auth stages 1–3 are done, tagged, and released (`chapter-auth-users`, `chapter-auth-jwt`, `chapter-auth-cart`). The cart is login-only (`f7bf556` on `main`). Input validation (H3) is released as `chapter-validation` (`7476e5e`, 2026-11-22). Files (image upload + cart quote PDF) is released as `chapter-files` (`2b68799`, 2026-11-25). Pagination is released as `chapter-pagination` (2026-11-25). Payments (Stripe test mode, orders) is released as `chapter-payments` (2026-11-26). REST basics (CORS, REST admin paths, id → 400) is released as `chapter-rest` (2026-11-26). Course section 22 (async requests) needed no code. Next chapter: automated tests (M7), or the next course section the user pastes.
 
 ## Done
 
+- **REST chapter (released `chapter-rest`, 2026-11-26):** see `docs/REST-PLAN.md`. Course section 24. `cors` with `CORS_ORIGIN` list (the user's `.env` has `http://localhost:3000`). Admin paths REST style (`POST /admin/products`, `DELETE /admin/products/:id`, `POST /admin/users`, `PUT|DELETE /admin/users/:id`; old paths 404). `validateIdParam` on every `:id` route (`abc` → 400, missing → 404). `CODE_REVIEW.md` (git-ignored): M5 + M11 done.
 - **Payments chapter (released `chapter-payments`, 2026-11-26):** see `docs/PAYMENTS-PLAN.md`. Stripe Checkout in test mode (`utils/stripe.utils.ts`, refuses non-`sk_test_` keys; `requireEnv` in `utils/env.utils.ts`). Tables `orders` + `order_items` (user ran the SQL; also in README). `POST /checkout` (login) → pending order (cascade save) + session → `{ orderId, url }`; `GET /checkout/success` (public) verifies with `sessions.retrieve`, then marks paid + empties cart in one transaction (update only if still pending); `GET /checkout/cancel`; `GET /orders` (login). `stripeSessionId` is `select: false`; DECIMAL → number via `decimalToNumber`. The user paid order 5 (184.77) in the browser. Later: webhooks, stock, refunds, invoice PDF.
 - **Pagination chapter (released `chapter-pagination`, 2026-11-25):** see `docs/PAGINATION-PLAN.md`. `?page` (≥1, default 1) + `?limit` (1–50, default 10) on `GET /shop/products` and `GET /admin/products`; `findAndCount` ordered by `id`; response `{ data, meta }`; bad query → 400 "Invalid query". Shared `utils/pagination.utils.ts` (`parsePagination`, `buildPageMeta`); parsed in the controller because Express 5's `req.query` is read-only. Lists now return 10 by default, not all.
 - **Files chapter (released `chapter-files`, `2b68799`, 2026-11-25):** see `docs/FILES-PLAN.md`. Upload `POST /admin/products/:id/image` (multer, `uploads/products/`, `/images` static, old/deleted files removed), `imageUrl` nullable (user ran the SQL), `GET /cart/quote` streams a PDFKit PDF. All cases tested by the user in Postman. Later: R2/S3 storage, `sharp`, `file-type`, orders + invoice.
@@ -26,18 +27,18 @@ Auth stages 1–3 are done, tagged, and released (`chapter-auth-users`, `chapter
 
 ## In progress
 
-- Nothing in progress. Payments chapter released 2026-11-26 as `chapter-payments` (`feat/payments` merged to `main`, pushed, branch deleted; Postman cloud synced).
+- Nothing in progress. REST chapter released 2026-11-26 as `chapter-rest` (`feat/rest` merged to `main`, pushed, branch deleted; Postman cloud synced).
 
 ## Decisions
 
 - **Validation:** shape checks in zod schemas on the route (400); DB rules stay in services (404/409). Login schema is loose on purpose. `productId` must be a JSON number (`"6"` → 400). URL `:id` still uses `parseId` (a `validateParams` is a later idea).
 - **No guest cart.** `/cart` is for a logged-in user only. A visitor signs up or logs in, then adds items. There is nothing to merge.
 - **H5 (parallel add/remove lost updates) is parked as "Later".** An atomic-SQL + row-lock fix was written, then undone at the user's request as too advanced for now. The simple `increment`/`decrement` version is noted in `CODE_REVIEW.md`.
+- **REST + CORS:** resource paths everywhere; CORS allows only `CORS_ORIGIN` addresses (never `*`); no cookies, so no `credentials`.
 - **Earlier decisions (still valid):**
   - The role comes from the JWT.
   - The first admin is created by SQL.
   - Delete ids go in the path.
-  - RPC-style paths are kept.
   - Postman auth is set on folders.
   - One chapter tag per auth stage.
 
@@ -69,7 +70,7 @@ Agreed order (one roadmap; `CODE_REVIEW.md` holds the quality items, `docs/BACKE
 
 1. **Automated tests (M7)** — first, so every later change is checked automatically. A "bad body → 400" test is the easy start.
 2. **Database schema file (M8)** — all the manual SQL in one file in the repo.
-3. **API path and status cleanup (M11)** — e.g. `add-product` → `POST /admin/products`.
+3. ~~API path and status cleanup (M11)~~ — done in `chapter-rest`.
 4. **List APIs** — sort, filter, search on product lists (pagination done in `chapter-pagination`).
 5. **Prisma era** (`chapter-prisma`), with migrations.
 

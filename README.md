@@ -19,7 +19,7 @@ Requires [Yarn 4](https://yarnpkg.com/) (this repo uses Yarn 4.12).
 
 ```bash
 yarn install
-cp .env.example .env   # fill in DB_*, JWT_SECRET, STRIPE_SECRET_KEY, APP_URL
+cp .env.example .env   # fill in DB_*, JWT_SECRET, STRIPE_SECRET_KEY, APP_URL, CORS_ORIGIN
 yarn start
 ```
 
@@ -73,6 +73,12 @@ CREATE TABLE order_items (
 ## API
 
 JSON request bodies are accepted. Unknown routes return `404` with `{ "message": "API not found" }`.
+
+Paths are REST style: the URL names the thing (`/admin/products`, `/admin/users/:id`) and the HTTP method names the action (`GET` read, `POST` create, `PUT` replace, `DELETE` remove). On every `:id` route, an id that isn't a positive whole number (`abc`) → **400**; a valid id with no row → **404**.
+
+### CORS
+
+Browsers only let a web page read answers from this API if the page's address is allowed. List the frontend addresses in `CORS_ORIGIN` (comma-separated), e.g. `CORS_ORIGIN=http://localhost:5173`. Missing → no browser page on another address can read the answers. Restart the server after changing it. Postman and curl aren't browsers, so CORS never applies to them.
 
 ### Pagination
 
@@ -160,15 +166,15 @@ Everything under `/admin` needs an **admin** token: `401` without a valid token,
 
 | Method | Path | Description |
 | --- | --- | --- |
-| `POST` | `/admin/add-product` | Create a product |
+| `POST` | `/admin/products` | Create a product |
 | `PUT` | `/admin/products/:id` | Replace an existing product (id in the URL; full body) |
 | `POST` | `/admin/products/:id/image` | Upload or replace the product's image (multipart form-data, field `image`) |
-| `DELETE` | `/admin/delete-product/:id` | Delete a product (id in the URL, no body; also deletes its image file) |
+| `DELETE` | `/admin/products/:id` | Delete a product (id in the URL, no body; also deletes its image file) |
 | `GET` | `/admin/products` | List all products, one page at a time (see [Pagination](#pagination)) |
 | `GET` | `/admin/products/:id` | Get a product by id |
-| `POST` | `/admin/add-user` | Create a user (optional `role`) |
-| `PUT` | `/admin/update-user/:id` | Replace a user (full body; does not change `role`) |
-| `DELETE` | `/admin/delete-user/:id` | Delete a user (id in the URL, no body) |
+| `POST` | `/admin/users` | Create a user (optional `role`) |
+| `PUT` | `/admin/users/:id` | Replace a user (full body; does not change `role`) |
+| `DELETE` | `/admin/users/:id` | Delete a user (id in the URL, no body) |
 | `GET` | `/admin/users` | List users |
 | `GET` | `/admin/users/:id` | Get a user by id |
 
