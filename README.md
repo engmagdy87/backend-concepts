@@ -78,7 +78,7 @@ Paths are REST style: the URL names the thing (`/admin/products`, `/admin/users/
 
 ### CORS
 
-Browsers only let a web page read answers from this API if the page's address is allowed. List the frontend addresses in `CORS_ORIGIN` (comma-separated), e.g. `CORS_ORIGIN=http://localhost:5173`. Missing → no browser page on another address can read the answers. Restart the server after changing it. Postman and curl aren't browsers, so CORS never applies to them.
+Browsers only let a web page read answers from this API if the page's address is allowed. List the frontend addresses in `CORS_ORIGIN` (comma-separated), e.g. `CORS_ORIGIN=http://localhost:3000`. Missing → no browser page on another address can read the answers. Restart the server after changing it. Postman and curl aren't browsers, so CORS never applies to them.
 
 ### Pagination
 

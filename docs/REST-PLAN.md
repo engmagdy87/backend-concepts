@@ -28,7 +28,7 @@ Practise the course module "Working with REST APIs - The Basics" (section 24) in
 ### 1. CORS (lecture 366)
 
 - [x] `yarn add cors` (+ `@types/cors`)
-- [x] `CORS_ORIGIN=http://localhost:5173` in `.env.example` (the user adds it to `.env` after seeing the error) (comma-separated list)
+- [x] `CORS_ORIGIN=http://localhost:3000` in `.env.example` (the user adds it to `.env` after seeing the error) (comma-separated list)
 - [x] `app.use(cors({ origin: allowedOrigins }))` before the routes
 - [x] See the error first: a tiny test page (served on another port; removed after the test) calls `GET /shop/products` with `fetch` → blocked by the browser before the change, works after
 - [x] Check the preflight: `OPTIONS` with `Authorization` (what the browser sends before a `POST` with a token)

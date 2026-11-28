@@ -19,7 +19,7 @@ const app = express();
 app.disable("x-powered-by"); // don't tell clients which framework we run
 
 // CORS: which websites may call this API from a browser.
-// A browser blocks a page on http://localhost:5173 from reading answers from
+// A browser blocks a page on http://localhost:3000 from reading answers from
 // http://localhost:3040 (another "origin") unless the API says it's allowed.
 // CORS_ORIGIN in .env lists the allowed addresses, comma-separated. Missing →
 // none. Postman and curl aren't browsers, so CORS never applies to them.
@@ -71,7 +71,9 @@ app.use(
       return res.status(500).json({ message: "Internal server error" });
     }
 
-    res.status(status).json({ message: err.expose ? err.message : "Bad request" });
+    res
+      .status(status)
+      .json({ message: err.expose ? err.message : "Bad request" });
   },
 );
 
