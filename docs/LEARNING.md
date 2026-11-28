@@ -4,6 +4,20 @@ Notes on backend concepts practiced in this repo. Newest entries first.
 
 Update this file when a feature teaches a concept worth keeping. Skip chores, formatting-only changes, and WIP commits.
 
+## 2026-11-28 — WebSockets with Socket.IO
+
+- HTTP: the client asks, the server answers, done. For live news the client would have to keep asking (polling). A WebSocket starts as an HTTP request that "upgrades" into an open, two-way connection, so the server can send first.
+- Other ways to get live updates: short polling, long polling, SSE (one way, server → client, built into browsers as `EventSource`), WebRTC (browser to browser). SSE would be enough for our two events; we use Socket.IO like the course.
+- Use both: HTTP for asking (`GET /shop/products`), the socket only says "something changed".
+- Socket.IO attaches to the same HTTP server (`app.listen` returns it), so same port. Its requests (`/socket.io/...`) never reach Express, so it needs its own `cors` option (same list).
+- `io.emit` → everyone; `io.to(room).emit` → one room; `socket.emit` → this one connection. A room is a server-side group of sockets; clients can't join one themselves.
+- One socket = one connection (tab), and its id changes on every reconnect. One user = many sockets, so private news goes to the room `user:<id>`.
+- Login on the socket: an `io.use` middleware (like `requireAuth`) reads the token from the handshake (`auth.token`, since browsers can't set headers on a socket) and uses the same `verifyToken`. A bad token is refused, not turned into a guest, so the client notices.
+- Send events only after the database change succeeded (after the transaction), and only once (`affected = 1`), so a message is always true.
+- Messages stay small: `products:changed` has no product data, because an unpublished product must not reach guests.
+- `socket.io-client` reconnects by itself (with growing waits); Postman doesn't.
+- Later: SSE, chat, scaling with the Redis adapter, token expiry on an open socket.
+
 ## 2026-11-26 — REST basics and CORS
 
 - REST: the URL names a thing (a resource: `/admin/products`, `/admin/products/7`), the HTTP method names the action (`GET` read, `POST` create, `PUT` replace, `DELETE` remove). Paths like `/add-product` put the action in the URL instead, which is the older "RPC" style.

@@ -7,6 +7,7 @@ import {
   productImageUrl,
 } from "../services/storage.service";
 import { buildPageMeta, parsePagination } from "../utils/pagination.utils";
+import { emitProductsChanged } from "../utils/socket.utils";
 
 export const addProduct = async (
   req: Request<unknown, unknown, ProductInput>,
@@ -14,6 +15,7 @@ export const addProduct = async (
 ) => {
   const product = new Product(req.body);
   const savedProduct = await product.save();
+  emitProductsChanged("created", savedProduct.id); // saved, so now tell everyone
 
   res.status(201).json({
     message: "Product added successfully",
@@ -31,6 +33,7 @@ export const updateProduct = async (
   if (!updatedProduct) {
     return res.status(404).json({ message: "Product not found" });
   }
+  emitProductsChanged("updated", parsedId);
 
   res.json({
     message: "Product updated successfully",
@@ -50,6 +53,7 @@ export const deleteProduct = async (
   }
   // The row is gone, so its image file is dead: delete it (only if it's ours).
   await deleteProductImage(deleted.imageUrl);
+  emitProductsChanged("deleted", parsedId);
 
   res.json({ message: "Product deleted successfully" });
 };
@@ -81,6 +85,7 @@ export const uploadImage = async (
   // Saved first, then delete the old file. If the save had failed, the product
   // would still point to the old file, so it must not be deleted before.
   await deleteProductImage(result.oldImageUrl);
+  emitProductsChanged("updated", result.product.id); // a new image is an update
 
   res.json({ message: "Image uploaded successfully", data: result.product });
 };

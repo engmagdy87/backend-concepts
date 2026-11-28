@@ -4,6 +4,8 @@ import express, { NextFunction, Request, Response } from "express";
 import bodyParser from "body-parser";
 import cors from "cors";
 import AppDataSource from "./utils/database.utils";
+import { allowedOrigins } from "./utils/cors.utils";
+import { initSocket } from "./utils/socket.utils";
 
 import adminRoutes from "./routes/admin.route";
 import shopRoutes from "./routes/shop.route";
@@ -18,15 +20,7 @@ const app = express();
 
 app.disable("x-powered-by"); // don't tell clients which framework we run
 
-// CORS: which websites may call this API from a browser.
-// A browser blocks a page on http://localhost:3000 from reading answers from
-// http://localhost:3040 (another "origin") unless the API says it's allowed.
-// CORS_ORIGIN in .env lists the allowed addresses, comma-separated. Missing →
-// none. Postman and curl aren't browsers, so CORS never applies to them.
-const allowedOrigins = (process.env.CORS_ORIGIN ?? "")
-  .split(",")
-  .map((origin) => origin.trim())
-  .filter(Boolean);
+// CORS: which websites may call this API from a browser (list in .env CORS_ORIGIN).
 app.use(cors({ origin: allowedOrigins }));
 
 app.use(bodyParser.json());
@@ -79,8 +73,10 @@ app.use(
 
 async function start() {
   await AppDataSource.initialize();
-  app.listen(3040);
-  console.log("Server is running on port 3040");
+  // app.listen returns Node's HTTP server; Socket.IO attaches to it (same port).
+  const httpServer = app.listen(3040);
+  initSocket(httpServer);
+  console.log("Server is running on port 3040 (HTTP + Socket.IO)");
 }
 
 start().catch((err) => {

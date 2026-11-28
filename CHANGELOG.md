@@ -7,6 +7,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- Real-time with Socket.IO on the same port (3040), same `CORS_ORIGIN` list: `products:changed` `{ action, productId }` to everyone after a successful product add / replace / delete / image upload; `order:paid` `{ orderId, total }` only to the paying user's room `user:<id>` when the success route really marks the order paid
+- Optional socket login: token in the handshake `auth.token` (browser) or `Authorization: Bearer` header; no token → guest, bad token → `connect_error` "Invalid or expired token"
 - CORS (`cors` package): browser pages on the addresses in `CORS_ORIGIN` (comma-separated, in `.env`) may call the API; any other address gets no permission
 - Payments with Stripe Checkout (test mode): `POST /checkout` (login) turns the cart into a `pending` order and returns Stripe's payment page `url`; `GET /checkout/success` asks Stripe whether the session is paid, then marks the order `paid` and empties the cart; `GET /checkout/cancel`. Prices always come from the database
 - `orders` and `order_items` tables (manual SQL in the README); each order item copies the product's title and price

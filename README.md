@@ -253,10 +253,31 @@ Payments use Stripe Checkout in test mode. Card details only ever go to Stripe's
 2. Open `url` and pay with the test card `4242 4242 4242 4242` (any future date, any CVC).
 3. Stripe redirects to `/checkout/success`. The server asks Stripe whether that session is paid. If yes: the order becomes `paid` and the cart is emptied (one transaction). **200** "Payment received", also on a refresh (nothing changes twice). **402** not paid, **404** unknown session, **400** missing `session_id`. No token is needed: a redirect can't carry one, and the answer comes from Stripe, not from the URL.
 
+### Real-time (Socket.IO)
+
+HTTP is still how a client asks for data. A Socket.IO connection on the **same address** (`http://localhost:3040`) lets the server push news. CORS uses the same `CORS_ORIGIN` list.
+
+| Event | Who gets it | Payload | When |
+| --- | --- | --- | --- |
+| `products:changed` | everyone connected | `{ action: "created" \| "updated" \| "deleted", productId }` | after an admin adds, replaces, deletes a product or uploads its image (only on success) |
+| `order:paid` | only that user (room `user:<id>`, all their tabs) | `{ orderId, total }` | when `/checkout/success` really marks the order paid (not on a refresh) |
+
+`products:changed` never carries the product (it may be unpublished): refetch `GET /shop/products`.
+
+Logging in on the socket is optional:
+
+- no token → guest (gets `products:changed`)
+- valid token → also joins `user:<id>` (gets `order:paid`)
+- bad or expired token → refused, the client gets `connect_error` "Invalid or expired token"
+
+Browser (`socket.io-client`): `io("http://localhost:3040", { auth: { token } })`. Postman and other tools: header `Authorization: Bearer <token>`.
+
+**Postman:** *New → Socket.IO*, URL `http://localhost:3040`, **Events** tab: listen to `products:changed` / `order:paid`, **Headers**: `Authorization: Bearer <token>` (type the key yourself). Save these in a separate collection (e.g. "backend-concepts sockets"): the exported collection file is HTTP only, and syncing it replaces the cloud copy.
+
 ## Layout
 
 ```
-app.ts                      # Express app, middleware, /admin and /cart locks, 404 + 500 handlers
+app.ts                      # Express app, middleware, /admin and /cart locks, 404 + 500 handlers, starts Socket.IO
 routes/admin.route.ts       # Admin product + user routes
 routes/shop.route.ts        # Shop product routes
 routes/cart.route.ts        # Cart routes
@@ -269,7 +290,7 @@ controllers/                # HTTP handlers (status codes + JSON)
 services/                   # Use-case glue (cart ↔ product, user create/update, login), image files on disk, quote PDF
 models/                     # Product / Cart / CartItem / User / Order / OrderItem domain + persistence
 types/                      # Shared input / record types (+ req.user in express.d.ts)
-utils/                      # DataSource, env, number, password, token, pagination helpers, Stripe client
+utils/                      # DataSource, env, number, password, token, pagination helpers, Stripe client, CORS list, Socket.IO (events)
 docs/                       # Learning notes, plans, Postman guide (not API runtime)
 uploads/                    # Uploaded product images (git-ignored)
 CHANGELOG.md / HANDOFF.md   # Stay at repo root (changelog + session handoff)
@@ -292,6 +313,9 @@ flowchart LR
   CheckoutSvc --> OrderModel["order.model.ts\norder-item.model.ts"]
   OrdersRt --> OrderModel
   App --> NotFound["404 JSON"]
+  Client -. "Socket.IO" .-> Socket["socket.utils.ts\nsame port"]
+  ProdCtrl -. "products:changed" .-> Socket
+  CheckoutSvc -. "order:paid" .-> Socket
   App --> Images["/images\nexpress.static"]
   Images --> UploadsDir["uploads/products/"]
   Admin --> Upload["upload.middleware.ts\nmulter"]

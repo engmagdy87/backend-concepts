@@ -29,6 +29,7 @@
     "mysql2": "^3.24.2",
     "pdfkit": "^0.21.0",
     "reflect-metadata": "^0.2.2",
+    "socket.io": "^4.8.4",
     "stripe": "^23.2.0",
     "typeorm": "^1.1.0",
     "zod": "4.6.7"

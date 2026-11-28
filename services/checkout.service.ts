@@ -1,5 +1,6 @@
 import { AppDataSource } from "../utils/database.utils";
 import { stripe, APP_URL, CURRENCY } from "../utils/stripe.utils";
+import { emitOrderPaid } from "../utils/socket.utils";
 import Order from "../models/order.model";
 import Cart from "../models/cart.model";
 import CartItem from "../models/cart-item.model";
@@ -112,7 +113,8 @@ export const confirmPaymentService = async (
 
   // Mark the order paid AND empty the cart: two different tables, so this time
   // we write the transaction ourselves (both happen, or neither).
-  await AppDataSource.transaction(async (db) => {
+  // Returns true only for the request that really changed the order.
+  const changed = await AppDataSource.transaction(async (db) => {
     // "only if still pending": if two requests arrive at the same moment,
     // only the first one changes a row (affected = 1); the other does nothing.
     const result = await db.update(
@@ -121,14 +123,22 @@ export const confirmPaymentService = async (
       { status: "paid" },
     );
     if (result.affected !== 1) {
-      return;
+      return false;
     }
 
     const cart = await db.findOneBy(Cart, { userId: order.userId });
     if (cart) {
       await db.delete(CartItem, { cartId: cart.id });
     }
+    return true;
   });
+
+  // After the transaction is saved (never inside it: if it rolled back, the
+  // message would be a lie). Only once: a refresh or a second request that
+  // found the order already paid sends nothing.
+  if (changed) {
+    emitOrderPaid(order.userId, { orderId: order.id, total: order.total });
+  }
 
   return { ok: true, orderId: order.id };
 };
